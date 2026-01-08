@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - Digital by Jeff</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box;}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; display: flex; align-items: center;
+            justify-content: center; padding: 20px;
+        }
+        .container {
+            max-width: 500px; width: 100%; background: white;
+            border-radius: 30px; box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+            padding: 50px 40px; text-align: center; animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp {
+            from {opacity: 0; transform: translateY(30px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        .logo {
+            width: 120px; height: 120px; margin: 0 auto 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 30px; display: flex; align-items: center;
+            justify-content: center; font-size: 50px; color: white;
+            box-shadow: 0 15px 40px rgba(102,126,234,0.3);
+        }
+        h1 {
+            color: #2d3748; margin-bottom: 10px; font-size: 32px;
+        }
+        .subtitle {
+            color: #718096; margin-bottom: 40px; font-size: 16px;
+        }
+        .table-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px; border-radius: 15px;
+            margin-bottom: 30px; box-shadow: 0 10px 30px rgba(102,126,234,0.3);
+        }
+        .table-info h3 {margin-bottom: 8px; font-size: 16px; opacity: 0.9;}
+        .table-info .number {font-size: 48px; font-weight: bold;}
+        .options {
+            display: grid; gap: 15px; margin-bottom: 30px;
+        }
+        .option-btn {
+            padding: 20px; background: #f7fafc; border: 3px solid #e2e8f0;
+            border-radius: 15px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; gap: 15px; text-align: left;
+        }
+        .option-btn:hover {
+            border-color: #667eea; background: #f0f4ff;
+            transform: translateX(5px);
+        }
+        .option-icon {
+            width: 60px; height: 60px; border-radius: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; display: flex; align-items: center;
+            justify-content: center; font-size: 28px;
+        }
+        .option-content h3 {
+            color: #2d3748; margin-bottom: 5px; font-size: 18px;
+        }
+        .option-content p {
+            color: #718096; font-size: 14px;
+        }
+        .btn-primary {
+            width: 100%; padding: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 15px;
+            font-weight: 700; font-size: 18px; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 10px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102,126,234,0.4);
+        }
+        .track-order {
+            margin-top: 25px; padding-top: 25px; border-top: 2px solid #e2e8f0;
+        }
+        .track-order h4 {color: #4a5568; margin-bottom: 15px; font-size: 14px;}
+        .track-input {
+            display: flex; gap: 10px;
+        }
+        .track-input input {
+            flex: 1; padding: 12px 15px; border: 2px solid #e2e8f0;
+            border-radius: 10px; font-size: 14px;
+        }
+        .track-input input:focus {
+            outline: none; border-color: #667eea;
+        }
+        .track-input button {
+            padding: 12px 24px; background: #667eea; color: white;
+            border: none; border-radius: 10px; cursor: pointer;
+            font-weight: 600; transition: all 0.3s;
+        }
+        .track-input button:hover {
+            background: #764ba2; transform: scale(1.05);
+        }
+        .features {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 15px; margin-top: 30px; padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+        }
+        .feature {text-align: center;}
+        .feature-icon {
+            width: 50px; height: 50px; margin: 0 auto 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px; display: flex; align-items: center;
+            justify-content: center; color: white; font-size: 20px;
+        }
+        .feature h5 {
+            color: #2d3748; font-size: 13px; margin-bottom: 5px;
+        }
+        .feature p {
+            color: #718096; font-size: 11px;
+        }
+        @media (max-width: 480px) {
+            .container {padding: 40px 25px;}
+            .features {grid-template-columns: 1fr;}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <i class="fas fa-utensils"></i>
+        </div>
+        
+        <h1>Digital by Jeff</h1>
+        <p class="subtitle">Modern Restaurant Experience</p>
+
+        <div id="tableInfo" style="display:none;">
+            <div class="table-info">
+                <h3>Welcome to Table</h3>
+                <div class="number" id="tableNumber">-</div>
+            </div>
+        </div>
+
+        <div class="options">
+            <div class="option-btn" onclick="browseMenu()">
+                <div class="option-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="option-content">
+                    <h3>Browse Menu</h3>
+                    <p>View our delicious menu items</p>
+                </div>
+            </div>
+
+            <div class="option-btn" onclick="viewCart()">
+                <div class="option-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="option-content">
+                    <h3>My Cart</h3>
+                    <p>View your shopping cart</p>
+                </div>
+            </div>
+
+            <div class="option-btn" onclick="scanQR()">
+                <div class="option-icon">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <div class="option-content">
+                    <h3>Scan QR Code</h3>
+                    <p>Order from your table</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="browseMenu()">
+            <i class="fas fa-utensils"></i>
+            Start Ordering
+        </button>
+
+        <div class="track-order">
+            <h4>Already have an order?</h4>
+            <div class="track-input">
+                <input type="text" id="orderNumberInput" 
+                       placeholder="Enter order number" 
+                       maxlength="20">
+                <button onclick="trackOrder()">
+                    <i class="fas fa-search"></i> Track
+                </button>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h5>Easy Order</h5>
+                <p>Quick & simple</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h5>Fast Service</h5>
+                <p>Quick delivery</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h5>Quality Food</h5>
+                <p>Fresh & tasty</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableNumber = urlParams.get('table');
+
+        if (tableNumber) {
+            document.getElementById('tableInfo').style.display = 'block';
+            document.getElementById('tableNumber').textContent = tableNumber;
+            localStorage.setItem('tableNumber', tableNumber);
+        }
+
+        function browseMenu() {
+            const table = tableNumber || localStorage.getItem('tableNumber') || '';
+            window.location.href = `menu.html${table ? '?table=' + table : ''}`;
+        }
+
+        function viewCart() {
+            const table = tableNumber || localStorage.getItem('tableNumber') || '';
+            window.location.href = `cart.html${table ? '?table=' + table : ''}`;
+        }
+
+        function scanQR() {
+            alert('Please scan the QR code on your table to start ordering!');
+        }
+
+        function trackOrder() {
+            const orderNum = document.getElementById('orderNumberInput').value.trim();
+            if (!orderNum) {
+                alert('Please enter your order number');
+                return;
+            }
+            window.location.href = `order-status.html?order=${orderNum}`;
+        }
+
+        document.getElementById('orderNumberInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                trackOrder();
+            }
+        });
+
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        if (cart.length > 0) {
+            const btn = document.querySelector('.option-btn:nth-child(2)');
+            btn.querySelector('.option-content p').textContent = `${cart.length} items in cart`;
+            btn.style.borderColor = '#667eea';
+            btn.style.background = '#f0f4ff';
+        }
+    </script>
+</body>
+</html>
