@@ -1,161 +1,116 @@
 <?php
 /**
- * Digital by Jeff - Database Configuration
- * Version: 1.0.0
- * Author: Jefri Wahyu Gunawan
+ * Database Configuration for Railway Deployment
+ * Supports both local development and production
  */
 
-// Load environment variables
-$env = parse_ini_file(__DIR__ . '/../.env');
-
-// Database Configuration
-define('DB_HOST', $env['DB_HOST'] ?? getenv('DB_HOST') ?? 'localhost');
-define('DB_PORT', $env['DB_PORT'] ?? getenv('DB_PORT') ?? '3306');
-define('DB_NAME', $env['DB_NAME'] ?? getenv('DB_NAME') ?? 'jwg_resto');
-define('DB_USER', $env['DB_USER'] ?? getenv('DB_USER') ?? 'root');
-define('DB_PASS', $env['DB_PASS'] ?? getenv('DB_PASS') ?? '');
-define('DB_CHARSET', 'utf8mb4');
-
 class Database {
-    private static $instance = null;
-    private $connection;
-    
-    private function __construct() {
+    private $host;
+    private $port;
+    private $db_name;
+    private $username;
+    private $password;
+    private $conn;
+
+    public function __construct() {
+        // Railway Environment Variables (Production)
+        // Fallback ke .env atau default values untuk local development
+        
+        // Priority: Environment Variables > .env file > defaults
+        $this->host = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? 'localhost');
+        $this->port = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? '3306');
+        $this->db_name = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'jwg_resto');
+        $this->username = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'root');
+        $this->password = getenv('DB_PASS') ?: ($_ENV['DB_PASS'] ?? '');
+
+        // Railway biasanya provide MYSQL_URL juga, bisa dipakai sebagai fallback
+        $mysql_url = getenv('MYSQL_URL');
+        if ($mysql_url && !getenv('DB_HOST')) {
+            $this->parseConnectionString($mysql_url);
+        }
+    }
+
+    /**
+     * Parse MySQL URL format: mysql://user:pass@host:port/database
+     */
+    private function parseConnectionString($url) {
+        $parsed = parse_url($url);
+        if ($parsed) {
+            $this->host = $parsed['host'] ?? 'localhost';
+            $this->port = $parsed['port'] ?? '3306';
+            $this->username = $parsed['user'] ?? 'root';
+            $this->password = $parsed['pass'] ?? '';
+            $this->db_name = ltrim($parsed['path'] ?? '/jwg_resto', '/');
+        }
+    }
+
+    /**
+     * Get database connection
+     */
+    public function getConnection() {
+        $this->conn = null;
+
         try {
-            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+            $dsn = "mysql:host={$this->host};port={$this->port};dbname={$this->db_name};charset=utf8mb4";
             
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
             ];
+
+            $this->conn = new PDO($dsn, $this->username, $this->password, $options);
             
-            $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
+            // Log successful connection (hanya untuk debugging)
+            error_log("Database connected successfully to {$this->host}:{$this->port}/{$this->db_name}");
             
-        } catch (PDOException $e) {
-            error_log("Database Connection Error: " . $e->getMessage());
-            throw new Exception("Database connection failed. Please check your configuration.");
+        } catch(PDOException $e) {
+            // Log error (jangan tampilkan password!)
+            error_log("Connection Error: " . $e->getMessage());
+            error_log("Host: {$this->host}, Port: {$this->port}, Database: {$this->db_name}, User: {$this->username}");
+            
+            // Throw exception untuk handling di level atas
+            throw new Exception("Database connection failed. Please check configuration.");
         }
+
+        return $this->conn;
     }
-    
-    public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-    
-    public function getConnection() {
-        return $this->connection;
-    }
-    
-    // Prevent cloning
-    private function __clone() {}
-    
-    // Prevent unserialization
-    public function __wakeup() {
-        throw new Exception("Cannot unserialize singleton");
-    }
-    
+
     /**
-     * Execute a query and return results
+     * Get connection info (for debugging)
      */
-    public function query($sql, $params = []) {
+    public function getConnectionInfo() {
+        return [
+            'host' => $this->host,
+            'port' => $this->port,
+            'database' => $this->db_name,
+            'user' => $this->username
+            // NEVER return password!
+        ];
+    }
+
+    /**
+     * Test connection
+     */
+    public function testConnection() {
         try {
-            $stmt = $this->connection->prepare($sql);
-            $stmt->execute($params);
-            return $stmt;
-        } catch (PDOException $e) {
-            error_log("Query Error: " . $e->getMessage() . " | SQL: " . $sql);
-            throw new Exception("Database query failed");
+            $conn = $this->getConnection();
+            return $conn !== null;
+        } catch (Exception $e) {
+            return false;
         }
-    }
-    
-    /**
-     * Fetch all results
-     */
-    public function fetchAll($sql, $params = []) {
-        $stmt = $this->query($sql, $params);
-        return $stmt->fetchAll();
-    }
-    
-    /**
-     * Fetch single row
-     */
-    public function fetchOne($sql, $params = []) {
-        $stmt = $this->query($sql, $params);
-        return $stmt->fetch();
-    }
-    
-    /**
-     * Insert data and return last insert ID
-     */
-    public function insert($table, $data) {
-        $fields = implode(', ', array_keys($data));
-        $placeholders = implode(', ', array_fill(0, count($data), '?'));
-        
-        $sql = "INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})";
-        $this->query($sql, array_values($data));
-        
-        return $this->connection->lastInsertId();
-    }
-    
-    /**
-     * Update data
-     */
-    public function update($table, $data, $where, $whereParams = []) {
-        $set = implode(', ', array_map(fn($key) => "{$key} = ?", array_keys($data)));
-        
-        $sql = "UPDATE {$table} SET {$set} WHERE {$where}";
-        $params = array_merge(array_values($data), $whereParams);
-        
-        $stmt = $this->query($sql, $params);
-        return $stmt->rowCount();
-    }
-    
-    /**
-     * Delete data
-     */
-    public function delete($table, $where, $whereParams = []) {
-        $sql = "DELETE FROM {$table} WHERE {$where}";
-        $stmt = $this->query($sql, $whereParams);
-        return $stmt->rowCount();
-    }
-    
-    /**
-     * Begin transaction
-     */
-    public function beginTransaction() {
-        return $this->connection->beginTransaction();
-    }
-    
-    /**
-     * Commit transaction
-     */
-    public function commit() {
-        return $this->connection->commit();
-    }
-    
-    /**
-     * Rollback transaction
-     */
-    public function rollback() {
-        return $this->connection->rollBack();
-    }
-    
-    /**
-     * Check if table exists
-     */
-    public function tableExists($table) {
-        $sql = "SHOW TABLES LIKE ?";
-        $result = $this->fetchOne($sql, [$table]);
-        return !empty($result);
     }
 }
 
-// Helper function to get database instance
-function db() {
-    return Database::getInstance();
+// Load .env file jika ada (untuk local development)
+if (file_exists(__DIR__ . '/../.env')) {
+    $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        list($key, $value) = explode('=', $line, 2);
+        $_ENV[trim($key)] = trim($value);
+        putenv(trim($key) . '=' . trim($value));
+    }
 }
 ?>
