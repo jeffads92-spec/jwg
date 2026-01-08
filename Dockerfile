@@ -1,11 +1,6 @@
-# ===================================================================
-# Digital by Jeff - Restaurant POS System
-# Docker Configuration
-# ===================================================================
-
 FROM php:8.1-apache
 
-# Install system dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -15,36 +10,32 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite
+# Enable Apache rewrite
 RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
-COPY . /var/www/html
+# Copy project
+COPY . .
 
-# Create necessary directories
-RUN mkdir -p /var/www/html/uploads/menu \
-    && mkdir -p /var/www/html/uploads/receipts \
-    && mkdir -p /var/www/html/qr-codes \
-    && mkdir -p /var/www/html/logs
+# Create required folders
+RUN mkdir -p uploads/menu uploads/receipts qr-codes logs
 
-# Set permissions
+# Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
-    && chmod -R 777 /var/www/html/uploads \
-    && chmod -R 777 /var/www/html/qr-codes \
-    && chmod -R 777 /var/www/html/logs
+    && chmod -R 777 uploads qr-codes logs
 
-# Configure Apache
+# Apache config
 RUN echo '<VirtualHost *:80>\n\
     ServerAdmin webmaster@localhost\n\
     DocumentRoot /var/www/html\n\
     <Directory /var/www/html>\n\
-        Options Indexes FollowSymLinks\n\
         AllowOverride All\n\
         Require all granted\n\
     </Directory>\n\
@@ -52,8 +43,6 @@ RUN echo '<VirtualHost *:80>\n\
     CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
 </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
-# Expose port
 EXPOSE 80
 
-# Start Apache
 CMD ["apache2-foreground"]
