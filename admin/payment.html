@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - JWG Resto POS</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+            background: #f0f2f5; 
+            display: flex;
+        }
+        
+        /* Sidebar */
+        .sidebar { 
+            width: 260px; 
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); 
+            height: 100vh; 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            overflow-y: auto;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-header { 
+            padding: 25px 20px; 
+            text-align: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo { 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: white;
+        }
+        
+        .logo img {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .logo h2 { 
+            color: white; 
+            font-size: 20px;
+        }
+        
+        .sidebar-menu { padding: 20px 0; }
+        
+        .menu-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 15px 25px; 
+            color: rgba(255,255,255,0.8); 
+            text-decoration: none; 
+            transition: all 0.3s ease;
+        }
+        
+        .menu-item:hover { 
+            background: rgba(255,255,255,0.1); 
+            color: white; 
+            padding-left: 30px;
+        }
+        
+        .menu-item.active { 
+            background: rgba(0,188,212,0.2); 
+            border-left: 4px solid #00BCD4; 
+            color: white;
+        }
+        
+        .menu-item i { 
+            font-size: 18px; 
+            width: 30px;
+        }
+        
+        /* Main Content */
+        .main-content { 
+            margin-left: 260px; 
+            width: calc(100% - 260px); 
+            min-height: 100vh;
+        }
+        
+        .topbar { 
+            background: white; 
+            padding: 20px 30px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .topbar h1 { 
+            font-size: 28px; 
+            color: #333;
+        }
+        
+        .content { 
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+        
+        /* Orders List */
+        .orders-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .panel-header h2 {
+            font-size: 20px;
+            color: #333;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-tab {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-tab.active {
+            background: #00BCD4;
+            border-color: #00BCD4;
+            color: white;
+        }
+        
+        .orders-list {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+        
+        .order-card {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .order-card:hover {
+            border-color: #00BCD4;
+            transform: translateX(5px);
+        }
+        
+        .order-card.selected {
+            background: #e0f7fa;
+            border-color: #00BCD4;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .order-number {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .order-total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00BCD4;
+        }
+        
+        .order-info {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .order-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Payment Panel */
+        .payment-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 30px;
+            max-height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+        
+        .order-details {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+        
+        .order-details h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .items-list {
+            margin-bottom: 15px;
+        }
+        
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+        
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        
+        .item-name {
+            font-weight: 500;
+        }
+        
+        .item-price {
+            color: #666;
+        }
+        
+        .totals-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        
+        .total-row.grand-total {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00BCD4;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 2px solid #00BCD4;
+        }
+        
+        /* Payment Methods */
+        .payment-methods {
+            margin-bottom: 25px;
+        }
+        
+        .payment-methods h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .payment-methods-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .payment-method-btn {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .payment-method-btn:hover {
+            border-color: #00BCD4;
+            transform: translateY(-2px);
+        }
+        
+        .payment-method-btn.selected {
+            background: #00BCD4;
+            border-color: #00BCD4;
+            color: white;
+        }
+        
+        .payment-method-btn i {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        /* Cash Input */
+        .cash-input-section {
+            display: none;
+            margin-bottom: 20px;
+        }
+        
+        .cash-input-section.show {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .quick-amount-btns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .quick-amount-btn {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-amount-btn:hover {
+            background: #00BCD4;
+            border-color: #00BCD4;
+            color: white;
+        }
+        
+        .change-display {
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .change-display.insufficient {
+            background: #ffebee;
+        }
+        
+        .change-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .change-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .change-display.insufficient .change-amount {
+            color: #f44336;
+        }
+        
+        /* Split Bill Section */
+        .split-section {
+            display: none;
+            margin-bottom: 20px;
+        }
+        
+        .split-section.show {
+            display: block;
+        }
+        
+        .split-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .split-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00BCD4 0%, #0097A7 100%);
+            color: white;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            width: 100%;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .modal-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-icon.success {
+            color: #4CAF50;
+        }
+        
+        .modal-icon.error {
+            color: #f44336;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <img src="../assets/logo-icon.png" alt="JWG" onerror="this.style.display='none'">
+                <h2>JWG POS</h2>
+            </div>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="dashboard.html" class="menu-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+            <a href="orders.html" class="menu-item"><i class="fas fa-shopping-cart"></i><span>Orders</span></a>
+            <a href="menu-management.html" class="menu-item"><i class="fas fa-utensils"></i><span>Menu</span></a>
+            <a href="kitchen.html" class="menu-item"><i class="fas fa-fire"></i><span>Kitchen</span></a>
+            <a href="payment.html" class="menu-item active"><i class="fas fa-cash-register"></i><span>Payment</span></a>
+            <a href="reports.html" class="menu-item"><i class="fas fa-chart-line"></i><span>Reports</span></a>
+            <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            <a href="#" class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="topbar">
+            <h1>💳 Payment Processing</h1>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <span style="color: #666;">Cashier: <strong id="cashierName">Admin</strong></span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Orders List Panel -->
+            <div class="orders-panel">
+                <div class="panel-header">
+                    <h2>Pending Orders</h2>
+                    <button class="btn-secondary" onclick="loadOrders()" style="padding: 8px 16px; width: auto;">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">All</button>
+                    <button class="filter-tab" data-filter="dine_in">Dine In</button>
+                    <button class="filter-tab" data-filter="takeaway">Takeaway</button>
+                </div>
+                
+                <div class="orders-list" id="ordersList">
+                    <div class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <h3>No Pending Orders</h3>
+                        <p>All orders have been paid</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Panel -->
+            <div class="payment-panel">
+                <h2 style="margin-bottom: 20px;">Process Payment</h2>
+                
+                <div id="noOrderSelected" class="empty-state">
+                    <i class="fas fa-hand-pointer"></i>
+                    <p>Select an order to process payment</p>
+                </div>
+                
+                <div id="paymentForm" style="display: none;">
+                    <!-- Order Details -->
+                    <div class="order-details" id="orderDetails"></div>
+                    
+                    <!-- Payment Methods -->
+                    <div class="payment-methods">
+                        <h3>Payment Method</h3>
+                        <div class="payment-methods-grid">
+                            <button class="payment-method-btn" data-method="cash">
+                                <i class="fas fa-money-bill-wave"></i>
+                                Cash
+                            </button>
+                            <button class="payment-method-btn" data-method="qris">
+                                <i class="fas fa-qrcode"></i>
+                                QRIS
+                            </button>
+                            <button class="payment-method-btn" data-method="card">
+                                <i class="fas fa-credit-card"></i>
+                                Card
+                            </button>
+                            <button class="payment-method-btn" data-method="gopay">
+                                <i class="fab fa-google-pay"></i>
+                                GoPay
+                            </button>
+                            <button class="payment-method-btn" data-method="ovo">
+                                <i class="fas fa-wallet"></i>
+                                OVO
+                            </button>
+                            <button class="payment-method-btn" data-method="dana">
+                                <i class="fas fa-mobile-alt"></i>
+                                DANA
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Cash Input Section -->
+                    <div class="cash-input-section" id="cashInputSection">
+                        <div class="form-group">
+                            <label>Amount Paid</label>
+                            <input type="number" id="paidAmount" placeholder="Enter amount..." 
+                                   oninput="calculateChange()">
+                        </div>
+                        
+                        <div class="quick-amount-btns">
+                            <button class="quick-amount-btn" onclick="setQuickAmount('exact')">Exact</button>
+                            <button class="quick-amount-btn" onclick="setQuickAmount(50000)">50K</button>
+                            <button class="quick-amount-btn" onclick="setQuickAmount(100000)">100K</button>
+                            <button class="quick-amount-btn" onclick="setQuickAmount(200000)">200K</button>
+                            <button class="quick-amount-btn" onclick="setQuickAmount(500000)">500K</button>
+                            <button class="quick-amount-btn" onclick="setQuickAmount(1000000)">1M</button>
+                        </div>
+                        
+                        <div class="change-display" id="changeDisplay">
+                            <div class="change-label">Change</div>
+                            <div class="change-amount" id="changeAmount">Rp 0</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Split Bill Section -->
+                    <div class="split-section" id="splitSection">
+                        <h3>Split Bill</h3>
+                        <p style="color: #666; margin-bottom: 15px;">
+                            Split payment between multiple people
+                        </p>
+                        <button class="btn-secondary" onclick="addSplit()">
+                            <i class="fas fa-plus"></i> Add Person
+                        </button>
+                        <div id="splitsList"></div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <button class="btn btn-primary" id="processBtn" onclick="processPayment()" disabled>
+                        <i class="fas fa-check"></i> Process Payment
+                    </button>
+                    
+                    <button class="btn btn-secondary" onclick="toggleSplitBill()">
+                        <i class="fas fa-cut"></i> Split Bill
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Payment Successful!</h2>
+            <p id="successMessage"></p>
+            <button class="btn btn-primary" onclick="printReceipt()" style="margin-top: 20px;">
+                <i class="fas fa-print"></i> Print Receipt
+            </button>
+            <button class="btn btn-secondary" onclick="closeModal()" style="margin-top: 10px;">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedOrder = null;
+        let selectedMethod = null;
+        let currentPaymentId = null;
+        let splitMode = false;
+        let splits = [];
+        
+        // Check authentication
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) {
+            window.location.href = 'index.html';
+        }
+        
+        document.getElementById('cashierName').textContent = user.full_name || user.username;
+        
+        // Initialize
+        loadOrders();
+        
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                loadOrders();
+            });
+        });
+        
+        // Payment method selection
+        document.querySelectorAll('.payment-method-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedMethod = this.dataset.method;
+                
+                // Show/hide cash input
+                if (selectedMethod === 'cash') {
+                    document.getElementById('cashInputSection').classList.add('show');
+                } else {
+                    document.getElementById('cashInputSection').classList.remove('show');
+                }
+                
+                // Enable process button
+                document.getElementById('processBtn').disabled = false;
+            });
+        });
+        
+        // Load pending orders
+        async function loadOrders() {
+            try {
+                const response = await fetch('api/payments.php?action=pending-orders');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    renderOrders(result.data);
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+        
+        // Render orders list
+        function renderOrders(orders) {
+            const container = document.getElementById('ordersList');
+            
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <h3>No Pending Orders</h3>
+                        <p>All orders have been paid</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = orders.map(order => `
+                <div class="order-card" onclick="selectOrder(${order.id})">
+                    <div class="order-header">
+                        <span class="order-number">${order.order_number}</span>
+                        <span class="order-total">Rp ${formatNumber(order.total)}</span>
+                    </div>
+                    <div class="order-info">
+                        ${order.table_number ? `<span><i class="fas fa-table"></i> ${order.table_number}</span>` : ''}
+                        <span><i class="fas fa-utensils"></i> ${order.total_items} items</span>
+                        <span><i class="fas fa-clock"></i> ${formatTime(order.created_at)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Select order
+        async function selectOrder(orderId) {
+            try {
+                const response = await fetch(`api/payments.php?action=calculate&order_id=${orderId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `order_id=${orderId}`
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    selectedOrder = result.data;
+                    renderOrderDetails(selectedOrder);
+                    
+                    // Highlight selected order
+                    document.querySelectorAll('.order-card').forEach(card => {
+                        card.classList.remove('selected');
+                    });
+                    event.currentTarget.classList.add('selected');
+                    
+                    // Show payment form
+                    document.getElementById('noOrderSelected').style.display = 'none';
+                    document.getElementById('paymentForm').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error selecting order:', error);
+            }
+        }
+        
+        // Render order details
+        function renderOrderDetails(order) {
+            const calc = order.calculation;
+            const container = document.getElementById('orderDetails');
+            
+            container.innerHTML = `
+                <h3>Order ${order.order_number}</h3>
+                <div class="items-list">
+                    ${order.items.map(item => `
+                        <div class="item-row">
+                            <span class="item-name">${item.menu_name} x${item.quantity}</span>
+                            <span class="item-price">Rp ${formatNumber(item.subtotal)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="totals-section">
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span>Rp ${formatNumber(calc.subtotal)}</span>
+                    </div>
+                    ${calc.discount > 0 ? `
+                        <div class="total-row">
+                            <span>Discount:</span>
+                            <span>- Rp ${formatNumber(calc.discount)}</span>
+                        </div>
+                    ` : ''}
+                    <div class="total-row">
+                        <span>Tax (${calc.tax_percentage}%):</span>
+                        <span>Rp ${formatNumber(calc.tax)}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Service (${calc.service_charge_percentage}%):</span>
+                        <span>Rp ${formatNumber(calc.service_charge)}</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span>TOTAL:</span>
+                        <span>Rp ${formatNumber(calc.total)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Calculate change for cash payment
+        function calculateChange() {
+            if (!selectedOrder || selectedMethod !== 'cash') return;
+            
+            const total = selectedOrder.calculation.total;
+            const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+            const change = paid - total;
+            
+            const changeDisplay = document.getElementById('changeDisplay');
+            const changeAmount = document.getElementById('changeAmount');
+            
+            if (paid < total) {
+                changeDisplay.classList.add('insufficient');
+                changeAmount.textContent = 'Insufficient!';
+                changeAmount.style.color = '#f44336';
+            } else {
+                changeDisplay.classList.remove('insufficient');
+                changeAmount.textContent = 'Rp ' + formatNumber(change);
+                changeAmount.style.color = '#4CAF50';
+            }
+        }
+        
+        // Set quick amount
+        function setQuickAmount(amount) {
+            if (amount === 'exact') {
+                amount = selectedOrder.calculation.total;
+            }
+            document.getElementById('paidAmount').value = amount;
+            calculateChange();
+        }
+        
+        // Toggle split bill
+        function toggleSplitBill() {
+            splitMode = !splitMode;
+            const splitSection = document.getElementById('splitSection');
+            const cashSection = document.getElementById('cashInputSection');
+            
+            if (splitMode) {
+                splitSection.classList.add('show');
+                cashSection.classList.remove('show');
+                // Initialize with 2 splits
+                splits = [];
+                addSplit();
+                addSplit();
+            } else {
+                splitSection.classList.remove('show');
+                splits = [];
+                document.getElementById('splitsList').innerHTML = '';
+            }
+        }
+        
+        // Process payment
+        async function processPayment() {
+            if (!selectedOrder || !selectedMethod) {
+                alert('Please select payment method');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('action', splitMode ?
