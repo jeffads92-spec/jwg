@@ -1,22 +1,10 @@
-# ===================================================================
-# Railway.app Configuration
-# Digital by Jeff - Restaurant POS System
-# ===================================================================
-
 [build]
 builder = "NIXPACKS"
-buildCommand = "echo 'Building JWG Restaurant POS...'"
 
 [deploy]
 startCommand = "php -S 0.0.0.0:$PORT -t ."
-healthcheckPath = "/admin/index.html"
-healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-[[services]]
-name = "jwg-resto-pos"
-
-[services.env]
-PHP_VERSION = "8.1"
-NODE_VERSION = "18"
+[nixpacks]
+# Nixpacks akan auto-detect PHP
