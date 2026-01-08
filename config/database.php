@@ -57,21 +57,27 @@ class Database {
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+                PDO::ATTR_TIMEOUT => 5 // 5 second timeout
             ];
 
             $this->conn = new PDO($dsn, $this->username, $this->password, $options);
             
             // Log successful connection (hanya untuk debugging)
-            error_log("Database connected successfully to {$this->host}:{$this->port}/{$this->db_name}");
+            error_log("✅ Database connected successfully to {$this->host}:{$this->port}/{$this->db_name}");
             
         } catch(PDOException $e) {
-            // Log error (jangan tampilkan password!)
-            error_log("Connection Error: " . $e->getMessage());
-            error_log("Host: {$this->host}, Port: {$this->port}, Database: {$this->db_name}, User: {$this->username}");
+            // Enhanced error logging
+            error_log("❌ DATABASE CONNECTION FAILED!");
+            error_log("Error: " . $e->getMessage());
+            error_log("Host: {$this->host}");
+            error_log("Port: {$this->port}");
+            error_log("Database: {$this->db_name}");
+            error_log("User: {$this->username}");
+            error_log("Password length: " . strlen($this->password) . " chars");
             
             // Throw exception untuk handling di level atas
-            throw new Exception("Database connection failed. Please check configuration.");
+            throw new Exception("Database connection failed: " . $e->getMessage());
         }
 
         return $this->conn;
@@ -85,8 +91,9 @@ class Database {
             'host' => $this->host,
             'port' => $this->port,
             'database' => $this->db_name,
-            'user' => $this->username
-            // NEVER return password!
+            'user' => $this->username,
+            'password_set' => !empty($this->password)
+            // NEVER return actual password!
         ];
     }
 
@@ -96,8 +103,14 @@ class Database {
     public function testConnection() {
         try {
             $conn = $this->getConnection();
-            return $conn !== null;
+            if ($conn) {
+                // Test with a simple query
+                $stmt = $conn->query("SELECT 1");
+                return $stmt !== false;
+            }
+            return false;
         } catch (Exception $e) {
+            error_log("Connection test failed: " . $e->getMessage());
             return false;
         }
     }
@@ -108,9 +121,19 @@ if (file_exists(__DIR__ . '/../.env')) {
     $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') === false) continue;
+        
         list($key, $value) = explode('=', $line, 2);
-        $_ENV[trim($key)] = trim($value);
-        putenv(trim($key) . '=' . trim($value));
+        $key = trim($key);
+        $value = trim($value);
+        
+        // Remove quotes if present
+        $value = trim($value, '"\'');
+        
+        $_ENV[$key] = $value;
+        putenv("{$key}={$value}");
     }
+    
+    error_log("✅ .env file loaded");
 }
 ?>
