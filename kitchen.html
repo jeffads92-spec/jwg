@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Display System - Digital by Jeff</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a202c;
+            color: white;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .header h1 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 28px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-item .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .clock {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-filter {
+            background: #2d3748;
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .btn-filter.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .btn-filter:hover {
+            transform: translateY(-2px);
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .order-ticket {
+            background: white;
+            color: #2d3748;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            border-left: 5px solid;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .order-ticket:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .order-ticket.new { border-left-color: #f59e0b; }
+        .order-ticket.preparing { border-left-color: #3b82f6; }
+        .order-ticket.ready { border-left-color: #10b981; }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px dashed #e2e8f0;
+        }
+
+        .order-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .order-type {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .type-dine-in { background: #dbeafe; color: #1e40af; }
+        .type-takeaway { background: #fef3c7; color: #92400e; }
+        .type-delivery { background: #e0e7ff; color: #4338ca; }
+        .type-qr { background: #d1fae5; color: #065f46; }
+
+        .order-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .timer.warning { color: #f59e0b; }
+        .timer.danger { color: #ef4444; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .order-info {
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #718096;
+        }
+
+        .info-value {
+            font-weight: 600;
+        }
+
+        .items-list {
+            margin-bottom: 15px;
+        }
+
+        .items-list h4 {
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .item {
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-qty {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .item-notes {
+            font-size: 12px;
+            color: #718096;
+            font-style: italic;
+            margin-top: 5px;
+            padding: 5px 10px;
+            background: #fff3cd;
+            border-radius: 5px;
+        }
+
+        .ticket-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-accept {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-accept:hover {
+            background: #2563eb;
+            transform: scale(1.02);
+        }
+
+        .btn-ready {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-ready:hover {
+            background: #059669;
+            transform: scale(1.02);
+        }
+
+        .btn-complete {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-complete:hover {
+            background: #4f46e5;
+            transform: scale(1.02);
+        }
+
+        .btn-reject {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #dc2626;
+            transform: scale(1.02);
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: slideInRight 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .notification.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <i class="fas fa-fire"></i>
+            Kitchen Display System
+        </h1>
+        <div class="header-stats">
+            <div class="stat-item">
+                <div class="label">Pending</div>
+                <div class="value" id="pendingCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Preparing</div>
+                <div class="value" id="preparingCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Ready</div>
+                <div class="value" id="readyCount">0</div>
+            </div>
+            <div class="clock" id="clock">00:00:00</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-filter active" data-filter="all">
+            <i class="fas fa-list"></i> All Orders
+        </button>
+        <button class="btn btn-filter" data-filter="pending">
+            <i class="fas fa-clock"></i> Pending
+        </button>
+        <button class="btn btn-filter" data-filter="preparing">
+            <i class="fas fa-fire"></i> Preparing
+        </button>
+        <button class="btn btn-filter" data-filter="ready">
+            <i class="fas fa-check"></i> Ready
+        </button>
+    </div>
+
+    <div class="orders-grid" id="ordersGrid">
+        <div class="empty-state">
+            <i class="fas fa-utensils"></i>
+            <h3>No active orders</h3>
+            <p>New orders will appear here</p>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <strong>New Order Received!</strong>
+        <p id="notificationText"></p>
+    </div>
+
+    <audio id="notificationSound" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjGH0fPTgjMGHm7A7+OZUQ0PVanm77BdGAg+ltryxnMpBSl+zPLaizsIGGS57OihUg4NUKXh8bllHAU2jdXzzn0vBSF1xe/glEcKEl60
+" preload="auto"></audio>
+
+    <script>
+        const API_URL = '../api';
+        let orders = [];
+        let currentFilter = 'all';
+        let lastOrderCount = 0;
+
+        function getAuthToken() {
+            return localStorage.getItem('token');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID');
+            document.getElementById('clock').textContent = timeString;
+        }
+
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${API_URL}/kitchen.php?action=list`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    if (data.data.length > lastOrderCount) {
+                        showNotification('New order received!');
+                        playSound();
+                    }
+                    lastOrderCount = data.data.length;
+                    orders = data.data;
+                    updateStats();
+                    renderOrders();
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+
+        function updateStats() {
+            const pending = orders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
+            const preparing = orders.filter(o => o.status === 'preparing').length;
+            const ready = orders.filter(o => o.status === 'ready').length;
+
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('preparingCount').textContent = preparing;
+            document.getElementById('readyCount').textContent = ready;
+        }
+
+        function renderOrders() {
+            const grid = document.getElementById('ordersGrid');
+            let filteredOrders = orders;
+
+            if (currentFilter !== 'all') {
+                filteredOrders = orders.filter(o => {
+                    if (currentFilter === 'pending') return o.status === 'pending' || o.status === 'confirmed';
+                    return o.status === currentFilter;
+                });
+            }
+
+            if (filteredOrders.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-utensils"></i>
+                        <h3>No ${currentFilter === 'all' ? 'active' : currentFilter} orders</h3>
+                        <p>${currentFilter === 'all' ? 'New orders will appear here' : 'All orders have been processed'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredOrders.map(order => {
+                const elapsed = getElapsedTime(order.created_at);
+                const timerClass = elapsed > 15 ? 'danger' : elapsed > 10 ? 'warning' : '';
+                const statusClass = order.status === 'preparing' ? 'preparing' : 
+                                   order.status === 'ready' ? 'ready' : 'new';
+
+                return `
+                    <div class="order-ticket ${statusClass}">
+                        <div class="ticket-header">
+                            <div class="order-number">#${order.order_number}</div>
+                            <div class="order-type type-${order.order_type}">${formatOrderType(order.order_type)}</div>
+                        </div>
+
+                        <div class="order-time">
+                            <i class="fas fa-clock"></i>
+                            <span class="timer ${timerClass}">${formatTimer(elapsed)}</span>
+                            <span>ago</span>
+                        </div>
+
+                        <div class="order-info">
+                            ${order.table_number ? `
+                                <div class="info-row">
+                                    <span class="info-label">Table</span>
+                                    <span class="info-value">${order.table_number}</span>
+                                </div>
+                            ` : ''}
+                            <div class="info-row">
+                                <span class="info-label">Customer</span>
+                                <span class="info-value">${order.customer_name}</span>
+                            </div>
+                        </div>
+
+                        <div class="items-list">
+                            <h4>Order Items</h4>
+                            ${JSON.parse(order.items || '[]').map(item => `
+                                <div class="item">
+                                    <div class="item-name">
+                                        <span class="item-qty">${item.quantity}x</span>
+                                        ${item.name}
+                                    </div>
+                                    ${item.notes ? `<div class="item-notes"><i class="fas fa-sticky-note"></i> ${item.notes}</div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="ticket-actions">
+                            ${getOrderActions(order)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getOrderActions(order) {
+            if (order.status === 'pending' || order.status === 'confirmed') {
+                return `
+                    <button class="btn-action btn-accept" onclick="updateStatus(${order.id}, 'preparing')">
+                        <i class="fas fa-fire"></i> Start Preparing
+                    </button>
+                    <button class="btn-action btn-reject" onclick="rejectOrder(${order.id})">
+                        <i class="fas fa-times"></i> Reject Order
+                    </button>
+                `;
+            } else if (order.status === 'preparing') {
+                return `
+                    <button class="btn-action btn-ready" onclick="updateStatus(${order.id}, 'ready')">
+                        <i class="fas fa-check"></i> Mark as Ready
+                    </button>
+                `;
+            } else if (order.status === 'ready') {
+                return `
+                    <button class="btn-action btn-complete" onclick="updateStatus(${order.id}, 'completed')">
+                        <i class="fas fa-check-double"></i> Complete Order
+                    </button>
+                `;
+            }
+            return '';
+        }
+
+        async function updateStatus(orderId, status) {
+            try {
+                const response = await fetch(`${API_URL}/kitchen.php?action=update-status&id=${orderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadOrders();
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+
+        async function rejectOrder(orderId) {
+            const reason = prompt('Reason for rejection:');
+            if (!reason) return;
+
+            try {
+                const response = await fetch(`${API_URL}/kitchen.php?action=reject&id=${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadOrders();
+                }
+            } catch (error) {
+                console.error('Error rejecting order:', error);
+            }
+        }
+
+        function getElapsedTime(timestamp) {
+            const now = new Date();
+            const created = new Date(timestamp);
+            return Math.floor((now - created) / 1000 / 60);
+        }
+
+        function formatTimer(minutes) {
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes}m`;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}h ${mins}m`;
+        }
+
+        function formatOrderType(type) {
+            return type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            document.getElementById('notificationText').textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        function playSound() {
+            const audio = document.getElementById('notificationSound');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+
+        document.querySelectorAll('.btn-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderOrders();
+            });
+        });
+
+        updateClock();
+        setInterval(updateClock, 1000);
+        loadOrders();
+        setInterval(loadOrders, 10000);
+        setInterval(renderOrders, 60000);
+    </script>
+</body>
+</html>
