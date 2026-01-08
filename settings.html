@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Digital by Jeff</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box;}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            max-width: 1200px; margin: 0 auto; background: white;
+            border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 30px;
+        }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #667eea;
+        }
+        .header h1 {color: #2d3748; display: flex; align-items: center; gap: 15px;}
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; font-weight: 600;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
+        }
+        .btn-secondary {background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0;}
+        .btn-danger {background: #ef4444; color: white;}
+        .tabs {
+            display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0;
+        }
+        .tab {
+            padding: 15px 25px; background: none; border: none; cursor: pointer;
+            font-weight: 600; color: #718096; border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab.active {color: #667eea; border-bottom-color: #667eea;}
+        .tab-content {display: none;}
+        .tab-content.active {display: block;}
+        .settings-section {
+            background: #f7fafc; padding: 25px; border-radius: 15px; margin-bottom: 20px;
+        }
+        .settings-section h3 {
+            color: #2d3748; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+        }
+        .form-group {margin-bottom: 20px;}
+        .form-group label {
+            display: block; margin-bottom: 8px; font-weight: 600; color: #4a5568;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px; border: 2px solid #e2e8f0;
+            border-radius: 10px; font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #667eea;
+        }
+        .switch-container {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; background: white; border-radius: 10px; margin-bottom: 15px;
+        }
+        .switch-info h4 {color: #2d3748; margin-bottom: 5px;}
+        .switch-info p {color: #718096; font-size: 13px;}
+        .switch {
+            position: relative; width: 60px; height: 30px;
+        }
+        .switch input {opacity: 0; width: 0; height: 0;}
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: #cbd5e0; border-radius: 30px; transition: 0.3s;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 22px; width: 22px;
+            left: 4px; bottom: 4px; background: white; border-radius: 50%; transition: 0.3s;
+        }
+        input:checked + .slider {background: #667eea;}
+        input:checked + .slider:before {transform: translateX(30px);}
+        .user-table {
+            background: white; border-radius: 10px; overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .user-table table {width: 100%; border-collapse: collapse;}
+        .user-table thead {background: #f7fafc;}
+        .user-table th {
+            padding: 15px; text-align: left; font-weight: 600;
+            color: #4a5568; border-bottom: 2px solid #e2e8f0;
+        }
+        .user-table td {padding: 15px; border-bottom: 1px solid #e2e8f0;}
+        .role-badge {
+            padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .role-admin {background: #fef3c7; color: #92400e;}
+        .role-manager {background: #dbeafe; color: #1e40af;}
+        .role-cashier {background: #d1fae5; color: #065f46;}
+        .role-waiter {background: #e0e7ff; color: #4338ca;}
+        .action-btn {
+            padding: 8px 12px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 13px; margin-right: 5px;
+        }
+        .btn-edit {background: #3b82f6; color: white;}
+        .btn-delete {background: #ef4444; color: white;}
+        .backup-card {
+            background: white; padding: 20px; border-radius: 10px;
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .backup-info h4 {color: #2d3748; margin-bottom: 5px;}
+        .backup-info p {color: #718096; font-size: 13px;}
+        .alert {
+            padding: 15px 20px; border-radius: 10px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .alert-success {background: #d1fae5; color: #065f46;}
+        .alert-warning {background: #fef3c7; color: #92400e;}
+        .alert-danger {background: #fee2e2; color: #991b1b;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cog"></i> System Settings</h1>
+            <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">
+                <i class="fas fa-home"></i> Dashboard
+            </button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('general')">
+                <i class="fas fa-sliders-h"></i> General
+            </button>
+            <button class="tab" onclick="switchTab('restaurant')">
+                <i class="fas fa-store"></i> Restaurant Info
+            </button>
+            <button class="tab" onclick="switchTab('payment')">
+                <i class="fas fa-credit-card"></i> Payment
+            </button>
+            <button class="tab" onclick="switchTab('users')">
+                <i class="fas fa-users"></i> Users
+            </button>
+            <button class="tab" onclick="switchTab('system')">
+                <i class="fas fa-server"></i> System
+            </button>
+        </div>
+
+        <div id="general" class="tab-content active">
+            <div class="settings-section">
+                <h3><i class="fas fa-toggle-on"></i> General Settings</h3>
+                
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>QR Self-Ordering</h4>
+                        <p>Allow customers to order via QR code</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="qrOrdering" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>Online Ordering</h4>
+                        <p>Enable online order delivery</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="onlineOrdering">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>Auto Print Receipt</h4>
+                        <p>Automatically print receipt after payment</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="autoPrint" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>Email Notifications</h4>
+                        <p>Send order notifications via email</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="emailNotif">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Default Language</label>
+                    <select id="language">
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select id="currency">
+                        <option value="IDR">IDR - Indonesian Rupiah</option>
+                        <option value="USD">USD - US Dollar</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings('general')">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <div id="restaurant" class="tab-content">
+            <div class="settings-section">
+                <h3><i class="fas fa-store"></i> Restaurant Information</h3>
+                
+                <div class="form-group">
+                    <label>Restaurant Name</label>
+                    <input type="text" id="restaurantName" value="Digital by Jeff">
+                </div>
+
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="address" rows="3">Jl. Example No. 123, Jakarta</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone" value="+62 812-3456-7890">
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" value="info@digitalbyjeff.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Tax Rate (%)</label>
+                    <input type="number" id="taxRate" value="10" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Service Charge (%)</label>
+                    <input type="number" id="serviceCharge" value="5" step="0.01">
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings('restaurant')">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <div id="payment" class="tab-content">
+            <div class="settings-section">
+                <h3><i class="fas fa-credit-card"></i> Payment Methods</h3>
+                
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>Cash Payment</h4>
+                        <p>Accept cash payments</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked disabled>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>Credit/Debit Card</h4>
+                        <p>Accept card payments</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="cardPayment" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>QRIS</h4>
+                        <p>Accept QRIS QR code payments</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="qrisPayment" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Midtrans Server Key</label>
+                    <input type="password" id="midtransKey" placeholder="Enter Midtrans server key">
+                </div>
+
+                <div class="form-group">
+                    <label>Midtrans Client Key</label>
+                    <input type="text" id="midtransClient" placeholder="Enter Midtrans client key">
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings('payment')">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <div id="users" class="tab-content">
+            <div class="settings-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3><i class="fas fa-users"></i> User Management</h3>
+                    <button class="btn btn-primary" onclick="addUser()">
+                        <i class="fas fa-plus"></i> Add User
+                    </button>
+                </div>
+
+                <div class="user-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td>Admin User</td>
+                                <td>admin</td>
+                                <td><span class="role-badge role-admin">Admin</span></td>
+                                <td><span style="color: #10b981;">Active</span></td>
+                                <td>Today, 10:30 AM</td>
+                                <td>
+                                    <button class="action-btn btn-edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="action-btn btn-delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="system" class="tab-content">
+            <div class="settings-section">
+                <h3><i class="fas fa-database"></i> Database Backup</h3>
+                
+                <div class="backup-card">
+                    <div class="backup-info">
+                        <h4>Last Backup</h4>
+                        <p>2024-01-08 10:30:00</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="createBackup()">
+                        <i class="fas fa-download"></i> Backup Now
+                    </button>
+                </div>
+
+                <div class="switch-container">
+                    <div class="switch-info">
+                        <h4>Auto Backup</h4>
+                        <p>Automatically backup database daily</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="autoBackup" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>These actions are irreversible. Please proceed with caution.</span>
+                </div>
+
+                <button class="btn btn-danger" onclick="clearLogs()">
+                    <i class="fas fa-trash"></i> Clear Activity Logs
+                </button>
+                <button class="btn btn-danger" onclick="resetDatabase()">
+                    <i class="fas fa-database"></i> Reset Database
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.closest('.tab').classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function saveSettings(section) {
+            alert(`Settings saved for ${section}!`);
+        }
+
+        function addUser() {
+            alert('Add User - Feature coming soon!');
+        }
+
+        function createBackup() {
+            if (confirm('Create database backup now?')) {
+                alert('Backup created successfully!');
+            }
+        }
+
+        function clearLogs() {
+            if (confirm('Are you sure you want to clear all activity logs? This cannot be undone.')) {
+                alert('Logs cleared!');
+            }
+        }
+
+        function resetDatabase() {
+            const confirmation = prompt('Type "RESET" to confirm database reset:');
+            if (confirmation === 'RESET') {
+                alert('Database reset initiated!');
+            }
+        }
+    </script>
+</body>
+</html>
