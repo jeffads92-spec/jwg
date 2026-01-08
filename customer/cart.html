@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - Digital by Jeff</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box;}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 {font-size: 24px; display: flex; align-items: center; gap: 10px;}
+        .back-btn {
+            background: rgba(255,255,255,0.2); border: 2px solid white;
+            color: white; padding: 10px 20px; border-radius: 50px;
+            cursor: pointer; font-weight: 600; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .container {
+            max-width: 1200px; margin: 0 auto; padding: 20px;
+            display: grid; grid-template-columns: 1fr 400px; gap: 20px;
+        }
+        .cart-items {background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+        .cart-items h2 {
+            color: #2d3748; margin-bottom: 20px; display: flex;
+            align-items: center; gap: 10px;
+        }
+        .empty-cart {
+            text-align: center; padding: 60px 20px; color: #718096;
+        }
+        .empty-cart i {font-size: 64px; margin-bottom: 20px; opacity: 0.5;}
+        .cart-item {
+            display: flex; gap: 15px; padding: 20px; background: #f7fafc;
+            border-radius: 10px; margin-bottom: 15px; position: relative;
+        }
+        .item-image {
+            width: 100px; height: 100px; object-fit: cover;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .item-details {flex: 1;}
+        .item-name {font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 5px;}
+        .item-notes {
+            font-size: 13px; color: #718096; margin-bottom: 10px;
+            font-style: italic; padding: 5px 10px; background: #fff3cd; border-radius: 5px;
+        }
+        .item-price {font-size: 16px; font-weight: 600; color: #667eea;}
+        .quantity-control {
+            display: flex; align-items: center; gap: 10px; margin-top: 10px;
+        }
+        .qty-btn {
+            width: 35px; height: 35px; border-radius: 50%;
+            border: 2px solid #667eea; background: white; color: #667eea;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .qty-btn:hover {background: #667eea; color: white;}
+        .qty-value {
+            font-size: 18px; font-weight: bold; min-width: 40px; text-align: center;
+        }
+        .remove-btn {
+            position: absolute; top: 15px; right: 15px;
+            background: #ef4444; color: white; border: none;
+            width: 30px; height: 30px; border-radius: 50%;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .remove-btn:hover {background: #dc2626; transform: scale(1.1);}
+        .order-summary {
+            background: white; padding: 25px; border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky; top: 100px; height: fit-content;
+        }
+        .order-summary h3 {color: #2d3748; margin-bottom: 20px;}
+        .summary-row {
+            display: flex; justify-content: space-between; padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .summary-row:last-child {border-bottom: none;}
+        .summary-label {color: #4a5568;}
+        .summary-value {font-weight: 600; color: #2d3748;}
+        .summary-total {
+            display: flex; justify-content: space-between;
+            padding: 15px 0; margin-top: 15px; border-top: 2px solid #e2e8f0;
+        }
+        .summary-total .label {font-size: 18px; font-weight: 700; color: #2d3748;}
+        .summary-total .value {font-size: 24px; font-weight: 700; color: #667eea;}
+        .form-section {margin-top: 25px;}
+        .form-section h4 {color: #2d3748; margin-bottom: 15px;}
+        .form-group {margin-bottom: 15px;}
+        .form-group label {
+            display: block; margin-bottom: 5px; font-weight: 600;
+            color: #4a5568; font-size: 14px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px; border: 2px solid #e2e8f0;
+            border-radius: 10px; font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #667eea;
+        }
+        .checkout-btn {
+            width: 100%; padding: 15px; margin-top: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 16px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .checkout-btn:disabled {
+            background: #cbd5e0; cursor: not-allowed; transform: none;
+        }
+        @media (max-width: 768px) {
+            .container {grid-template-columns: 1fr; gap: 20px;}
+            .order-summary {position: static;}
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1><i class="fas fa-shopping-cart"></i> Your Cart</h1>
+            <a href="menu.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Menu
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="cart-items">
+            <h2>
+                <i class="fas fa-list"></i> 
+                Cart Items (<span id="itemCount">0</span>)
+            </h2>
+            <div id="cartItemsContainer"></div>
+        </div>
+
+        <div class="order-summary">
+            <h3>Order Summary</h3>
+            
+            <div class="summary-row">
+                <span class="summary-label">Subtotal</span>
+                <span class="summary-value" id="subtotal">Rp 0</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Tax (10%)</span>
+                <span class="summary-value" id="tax">Rp 0</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Service Charge (5%)</span>
+                <span class="summary-value" id="service">Rp 0</span>
+            </div>
+            <div class="summary-total">
+                <span class="label">Total</span>
+                <span class="value" id="total">Rp 0</span>
+            </div>
+
+            <div class="form-section">
+                <h4>Your Information</h4>
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="customerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label>Email (Optional)</label>
+                    <input type="email" id="customerEmail">
+                </div>
+                <div class="form-group">
+                    <label>Order Type *</label>
+                    <select id="orderType" required>
+                        <option value="dine-in">Dine In</option>
+                        <option value="takeaway">Takeaway</option>
+                        <option value="delivery">Delivery</option>
+                    </select>
+                </div>
+                <div class="form-group" id="tableGroup">
+                    <label>Table Number</label>
+                    <input type="text" id="tableNumber">
+                </div>
+                <div class="form-group" id="addressGroup" style="display:none;">
+                    <label>Delivery Address</label>
+                    <textarea id="deliveryAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Special Notes</label>
+                    <textarea id="orderNotes" rows="3" placeholder="Any special requests?"></textarea>
+                </div>
+            </div>
+
+            <button class="checkout-btn" id="checkoutBtn" onclick="submitOrder()">
+                <i class="fas fa-check"></i> Place Order
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '../api/customer';
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const tableNumber = new URLSearchParams(window.location.search).get('table') || '';
+
+        function renderCart() {
+            const container = document.getElementById('cartItemsContainer');
+            document.getElementById('itemCount').textContent = cart.length;
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Your cart is empty</h3>
+                        <p>Add some delicious items from our menu!</p>
+                        <a href="menu.html" style="margin-top: 20px; display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
+                            <i class="fas fa-utensils"></i> Browse Menu
+                        </a>
+                    </div>
+                `;
+                document.getElementById('checkoutBtn').disabled = true;
+                return;
+            }
+
+            container.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <img src="${item.image || 'https://via.placeholder.com/100?text=No+Image'}" 
+                         class="item-image" alt="${item.name}">
+                    <div class="item-details">
+                        <div class="item-name">${item.name}</div>
+                        ${item.notes ? `<div class="item-notes"><i class="fas fa-sticky-note"></i> ${item.notes}</div>` : ''}
+                        <div class="item-price">Rp ${formatNumber(item.price)}</div>
+                        <div class="quantity-control">
+                            <button class="qty-btn" onclick="updateQuantity(${index}, -1)">-</button>
+                            <span class="qty-value">${item.quantity}</span>
+                            <button class="qty-btn" onclick="updateQuantity(${index}, 1)">+</button>
+                        </div>
+                    </div>
+                    <button class="remove-btn" onclick="removeItem(${index})" title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            updateSummary();
+            document.getElementById('checkoutBtn').disabled = false;
+        }
+
+        function updateQuantity(index, change) {
+            cart[index].quantity = Math.max(1, cart[index].quantity + change);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function removeItem(index) {
+            if (confirm('Remove this item from cart?')) {
+                cart.splice(index, 1);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                renderCart();
+            }
+        }
+
+        function updateSummary() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.10;
+            const service = subtotal * 0.05;
+            const total = subtotal + tax + service;
+
+            document.getElementById('subtotal').textContent = 'Rp ' + formatNumber(subtotal);
+            document.getElementById('tax').textContent = 'Rp ' + formatNumber(tax);
+            document.getElementById('service').textContent = 'Rp ' + formatNumber(service);
+            document.getElementById('total').textContent = 'Rp ' + formatNumber(total);
+        }
+
+        async function submitOrder() {
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const email = document.getElementById('customerEmail').value;
+            const orderType = document.getElementById('orderType').value;
+            const table = document.getElementById('tableNumber').value;
+            const address = document.getElementById('deliveryAddress').value;
+            const notes = document.getElementById('orderNotes').value;
+
+            if (!name || !phone) {
+                alert('Please fill in your name and phone number!');
+                return;
+            }
+
+            if (orderType === 'delivery' && !address) {
+                alert('Please enter delivery address!');
+                return;
+            }
+
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.10;
+            const service = subtotal * 0.05;
+            const total = subtotal + tax + service;
+
+            const orderData = {
+                customer_name: name,
+                customer_phone: phone,
+                customer_email: email,
+                order_type: orderType,
+                table_number: table || tableNumber,
+                delivery_address: address,
+                notes: notes,
+                items: cart,
+                subtotal: subtotal,
+                tax: tax,
+                service_charge: service,
+                total_amount: total
+            };
+
+            try {
+                document.getElementById('checkoutBtn').disabled = true;
+                document.getElementById('checkoutBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                const response = await fetch(`${API_URL}/order.php?action=submit`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(orderData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    localStorage.removeItem('cart');
+                    alert('Order placed successfully! Order number: ' + data.order_number);
+                    window.location.href = `order-status.html?order=${data.order_number}`;
+                } else {
+                    alert('Failed to place order: ' + data.message);
+                    document.getElementById('checkoutBtn').disabled = false;
+                    document.getElementById('checkoutBtn').innerHTML = '<i class="fas fa-check"></i> Place Order';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to place order. Please try again.');
+                document.getElementById('checkoutBtn').disabled = false;
+                document.getElementById('checkoutBtn').innerHTML = '<i class="fas fa-check"></i> Place Order';
+            }
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('id-ID').format(num);
+        }
+
+        document.getElementById('orderType').addEventListener('change', (e) => {
+            const type = e.target.value;
+            document.getElementById('tableGroup').style.display = type === 'dine-in' ? 'block' : 'none';
+            document.getElementById('addressGroup').style.display = type === 'delivery' ? 'block' : 'none';
+        });
+
+        if (tableNumber) {
+            document.getElementById('tableNumber').value = tableNumber;
+        }
+
+        renderCart();
+    </script>
+</body>
+</html>
