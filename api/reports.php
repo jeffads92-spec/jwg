@@ -1,11 +1,6 @@
 <?php
-/**
- * Digital by Jeff - Reports & Analytics API
- * Handles: Sales reports, analytics, statistics
- */
-
-header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -16,572 +11,227 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../config/database.php';
 
-class ReportsAPI {
-    private $db;
+$action = $_GET['action'] ?? 'summary';
+$response = ['success' => false, 'message' => '', 'data' => null];
+
+try {
+    $database = new Database();
+    $conn = $database->getConnection();
     
-    public function __construct() {
-        $this->db = Database::getInstance();
+    $period = $_GET['period'] ?? 'month';
+    
+    // Determine date range
+    switch ($period) {
+        case 'today':
+            $startDate = date('Y-m-d');
+            $endDate = date('Y-m-d');
+            break;
+        case 'yesterday':
+            $startDate = date('Y-m-d', strtotime('-1 day'));
+            $endDate = date('Y-m-d', strtotime('-1 day'));
+            break;
+        case 'week':
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            $endDate = date('Y-m-d');
+            break;
+        case 'month':
+            $startDate = date('Y-m-01');
+            $endDate = date('Y-m-d');
+            break;
+        case 'year':
+            $startDate = date('Y-01-01');
+            $endDate = date('Y-m-d');
+            break;
+        default:
+            $startDate = $_GET['start_date'] ?? date('Y-m-01');
+            $endDate = $_GET['end_date'] ?? date('Y-m-d');
     }
     
-    public function handleRequest() {
-        $action = $_GET['action'] ?? '';
-        
-        try {
-            switch ($action) {
-                case 'dashboard':
-                    return $this->getDashboardStats();
-                    
-                case 'sales-today':
-                    return $this->getSalesToday();
-                    
-                case 'sales-period':
-                    return $this->getSalesPeriod();
-                    
-                case 'top-selling':
-                    return $this->getTopSellingItems();
-                    
-                case 'sales-by-category':
-                    return $this->getSalesByCategory();
-                    
-                case 'sales-by-hour':
-                    return $this->getSalesByHour();
-                    
-                case 'payment-methods':
-                    return $this->getPaymentMethods();
-                    
-                case 'order-sources':
-                    return $this->getOrderSources();
-                    
-                case 'daily-summary':
-                    return $this->getDailySummary();
-                    
-                case 'monthly-comparison':
-                    return $this->getMonthlyComparison();
-                    
-                case 'export-sales':
-                    return $this->exportSales();
-                    
-                default:
-                    return $this->error('Invalid action', 400);
-            }
-        } catch (Exception $e) {
-            error_log("Reports API Error: " . $e->getMessage());
-            return $this->error($e->getMessage(), 500);
-        }
-    }
-    
-    /**
-     * Get dashboard statistics
-     */
-    private function getDashboardStats() {
-        $today = date('Y-m-d');
-        
-        // Today's sales
-        $todaySales = $this->db->fetchOne("
-            SELECT 
-                COUNT(*) as total_orders,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_orders,
-                SUM(CASE WHEN status = 'completed' AND is_paid = 1 THEN total ELSE 0 END) as total_revenue,
-                AVG(CASE WHEN status = 'completed' THEN total ELSE NULL END) as avg_order_value
-            FROM orders
-            WHERE DATE(created_at) = ?
-        ", [$today]);
-        
-        // Active orders
-        $activeOrders = $this->db->fetchOne("
-            SELECT COUNT(*) as count
-            FROM orders
-            WHERE status IN ('pending', 'confirmed', 'preparing', 'ready', 'served')
+    if ($action === 'summary') {
+        // Total Revenue
+        $stmt = $conn->prepare("
+            SELECT COALESCE(SUM(total_amount), 0) as total
+            FROM orders 
+            WHERE DATE(created_at) BETWEEN ? AND ? 
+            AND status = 'completed'
         ");
+        $stmt->execute([$startDate, $endDate]);
+        $totalRevenue = $stmt->fetch()['total'];
         
-        // Today's customers
-        $todayCustomers = $this->db->fetchOne("
-            SELECT COUNT(DISTINCT table_id) as count
-            FROM orders
-            WHERE DATE(created_at) = ? AND table_id IS NOT NULL
-        ", [$today]);
-        
-        // Occupied tables
-        $occupiedTables = $this->db->fetchOne("
-            SELECT COUNT(*) as count
-            FROM tables
-            WHERE status = 'occupied'
+        // Total Orders
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as total
+            FROM orders 
+            WHERE DATE(created_at) BETWEEN ? AND ? 
+            AND status = 'completed'
         ");
+        $stmt->execute([$startDate, $endDate]);
+        $totalOrders = $stmt->fetch()['total'];
         
-        // Low stock alerts
-        $lowStockCount = $this->db->fetchOne("
-            SELECT COUNT(*) as count
-            FROM inventory
-            WHERE current_stock <= minimum_stock
-        ");
+        // Average Order Value
+        $avgOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
         
-        // Kitchen queue
-        $kitchenQueue = $this->db->fetchOne("
-            SELECT COUNT(*) as count
-            FROM order_items oi
-            JOIN orders o ON oi.order_id = o.id
-            WHERE oi.status IN ('pending', 'preparing')
-            AND o.status NOT IN ('cancelled', 'completed')
-        ");
-        
-        // Yesterday comparison
-        $yesterday = date('Y-m-d', strtotime('-1 day'));
-        $yesterdaySales = $this->db->fetchOne("
-            SELECT SUM(CASE WHEN status = 'completed' AND is_paid = 1 THEN total ELSE 0 END) as revenue
-            FROM orders
-            WHERE DATE(created_at) = ?
-        ", [$yesterday]);
-        
-        $revenueChange = 0;
-        if ($yesterdaySales['revenue'] > 0) {
-            $revenueChange = (($todaySales['total_revenue'] - $yesterdaySales['revenue']) / $yesterdaySales['revenue']) * 100;
-        }
-        
-        return $this->success([
-            'today' => [
-                'date' => $today,
-                'total_orders' => (int)$todaySales['total_orders'],
-                'completed_orders' => (int)$todaySales['completed_orders'],
-                'total_revenue' => (float)$todaySales['total_revenue'],
-                'avg_order_value' => (float)$todaySales['avg_order_value'],
-                'revenue_change_percent' => round($revenueChange, 2)
-            ],
-            'current' => [
-                'active_orders' => (int)$activeOrders['count'],
-                'customers_today' => (int)$todayCustomers['count'],
-                'occupied_tables' => (int)$occupiedTables['count'],
-                'kitchen_queue' => (int)$kitchenQueue['count'],
-                'low_stock_items' => (int)$lowStockCount['count']
-            ]
-        ]);
-    }
-    
-    /**
-     * Get today's sales detail
-     */
-    private function getSalesToday() {
-        $today = date('Y-m-d');
-        
-        $sql = "
-            SELECT 
-                o.id, o.order_number, o.created_at, o.completed_at, o.total,
-                o.order_type, o.order_source, o.status,
-                t.table_number,
-                COUNT(oi.id) as items_count
-            FROM orders o
-            LEFT JOIN tables t ON o.table_id = t.id
-            LEFT JOIN order_items oi ON o.id = oi.order_id
-            WHERE DATE(o.created_at) = ?
-            GROUP BY o.id
-            ORDER BY o.created_at DESC
-        ";
-        
-        $orders = $this->db->fetchAll($sql, [$today]);
-        
-        foreach ($orders as &$order) {
-            $order['total'] = (float)$order['total'];
-        }
-        
-        return $this->success($orders);
-    }
-    
-    /**
-     * Get sales for a period
-     */
-    private function getSalesPeriod() {
-        $dateFrom = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
-        $dateTo = $_GET['date_to'] ?? date('Y-m-d');
-        
-        $sql = "
-            SELECT 
-                DATE(created_at) as date,
-                COUNT(*) as total_orders,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_orders,
-                SUM(CASE WHEN status = 'completed' AND is_paid = 1 THEN total ELSE 0 END) as revenue,
-                AVG(CASE WHEN status = 'completed' THEN total ELSE NULL END) as avg_order_value
-            FROM orders
+        // Total Customers
+        $stmt = $conn->prepare("
+            SELECT COUNT(DISTINCT customer_phone) as total
+            FROM orders 
             WHERE DATE(created_at) BETWEEN ? AND ?
+            AND customer_phone IS NOT NULL AND customer_phone != ''
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $totalCustomers = $stmt->fetch()['total'];
+        
+        // Sales Trend (last 7 days)
+        $stmt = $conn->prepare("
+            SELECT DATE(created_at) as date, COALESCE(SUM(total_amount), 0) as revenue
+            FROM orders
+            WHERE DATE(created_at) BETWEEN DATE_SUB(?, INTERVAL 6 DAY) AND ?
+            AND status = 'completed'
             GROUP BY DATE(created_at)
-            ORDER BY date ASC
-        ";
+            ORDER BY date
+        ");
+        $stmt->execute([$endDate, $endDate]);
+        $salesTrend = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        $sales = $this->db->fetchAll($sql, [$dateFrom, $dateTo]);
-        
-        foreach ($sales as &$row) {
-            $row['revenue'] = (float)$row['revenue'];
-            $row['avg_order_value'] = (float)$row['avg_order_value'];
+        $trendLabels = [];
+        $trendValues = [];
+        foreach ($salesTrend as $day) {
+            $trendLabels[] = date('D', strtotime($day['date']));
+            $trendValues[] = (float)$day['revenue'];
         }
         
-        // Calculate totals
-        $totals = [
-            'total_orders' => array_sum(array_column($sales, 'total_orders')),
-            'completed_orders' => array_sum(array_column($sales, 'completed_orders')),
-            'total_revenue' => array_sum(array_column($sales, 'revenue')),
-            'avg_order_value' => count($sales) > 0 ? array_sum(array_column($sales, 'avg_order_value')) / count($sales) : 0
-        ];
-        
-        return $this->success([
-            'period' => [
-                'from' => $dateFrom,
-                'to' => $dateTo
-            ],
-            'daily_sales' => $sales,
-            'totals' => $totals
-        ]);
-    }
-    
-    /**
-     * Get top selling items
-     */
-    private function getTopSellingItems() {
-        $dateFrom = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
-        $dateTo = $_GET['date_to'] ?? date('Y-m-d');
-        $limit = $_GET['limit'] ?? 10;
-        
-        $sql = "
-            SELECT 
-                m.id, m.name, m.price, m.image,
-                c.name as category_name,
-                COUNT(oi.id) as order_count,
-                SUM(oi.quantity) as total_quantity,
-                SUM(oi.subtotal) as total_revenue
-            FROM order_items oi
-            JOIN orders o ON oi.order_id = o.id
-            JOIN menu_items m ON oi.menu_item_id = m.id
-            JOIN categories c ON m.category_id = c.id
-            WHERE DATE(o.created_at) BETWEEN ? AND ?
-            AND o.status = 'completed'
-            GROUP BY m.id
-            ORDER BY total_quantity DESC
-            LIMIT ?
-        ";
-        
-        $items = $this->db->fetchAll($sql, [$dateFrom, $dateTo, (int)$limit]);
-        
-        foreach ($items as &$item) {
-            $item['price'] = (float)$item['price'];
-            $item['total_revenue'] = (float)$item['total_revenue'];
-        }
-        
-        return $this->success($items);
-    }
-    
-    /**
-     * Get sales by category
-     */
-    private function getSalesByCategory() {
-        $dateFrom = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
-        $dateTo = $_GET['date_to'] ?? date('Y-m-d');
-        
-        $sql = "
-            SELECT 
-                c.id, c.name, c.icon,
-                COUNT(DISTINCT oi.id) as items_sold,
-                SUM(oi.quantity) as total_quantity,
-                SUM(oi.subtotal) as total_revenue
-            FROM order_items oi
-            JOIN orders o ON oi.order_id = o.id
-            JOIN menu_items m ON oi.menu_item_id = m.id
-            JOIN categories c ON m.category_id = c.id
-            WHERE DATE(o.created_at) BETWEEN ? AND ?
-            AND o.status = 'completed'
-            GROUP BY c.id
-            ORDER BY total_revenue DESC
-        ";
-        
-        $categories = $this->db->fetchAll($sql, [$dateFrom, $dateTo]);
-        
-        $totalRevenue = array_sum(array_column($categories, 'total_revenue'));
-        
-        foreach ($categories as &$cat) {
-            $cat['total_revenue'] = (float)$cat['total_revenue'];
-            $cat['percentage'] = $totalRevenue > 0 ? round(($cat['total_revenue'] / $totalRevenue) * 100, 2) : 0;
-        }
-        
-        return $this->success($categories);
-    }
-    
-    /**
-     * Get sales by hour (peak hours analysis)
-     */
-    private function getSalesByHour() {
-        $date = $_GET['date'] ?? date('Y-m-d');
-        
-        $sql = "
-            SELECT 
-                HOUR(created_at) as hour,
-                COUNT(*) as order_count,
-                SUM(CASE WHEN status = 'completed' THEN total ELSE 0 END) as revenue
-            FROM orders
-            WHERE DATE(created_at) = ?
-            GROUP BY HOUR(created_at)
-            ORDER BY hour ASC
-        ";
-        
-        $hours = $this->db->fetchAll($sql, [$date]);
-        
-        // Fill missing hours with 0
-        $fullDay = [];
-        for ($h = 0; $h < 24; $h++) {
-            $found = false;
-            foreach ($hours as $hour) {
-                if ($hour['hour'] == $h) {
-                    $fullDay[] = [
-                        'hour' => $h,
-                        'hour_label' => sprintf('%02d:00', $h),
-                        'order_count' => (int)$hour['order_count'],
-                        'revenue' => (float)$hour['revenue']
-                    ];
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                $fullDay[] = [
-                    'hour' => $h,
-                    'hour_label' => sprintf('%02d:00', $h),
-                    'order_count' => 0,
-                    'revenue' => 0.0
-                ];
-            }
-        }
-        
-        return $this->success($fullDay);
-    }
-    
-    /**
-     * Get payment methods breakdown
-     */
-    private function getPaymentMethods() {
-        $dateFrom = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
-        $dateTo = $_GET['date_to'] ?? date('Y-m-d');
-        
-        $sql = "
-            SELECT 
-                payment_method,
-                COUNT(*) as transaction_count,
-                SUM(amount) as total_amount
-            FROM payments
-            WHERE DATE(paid_at) BETWEEN ? AND ?
-            AND payment_status = 'completed'
-            GROUP BY payment_method
-            ORDER BY total_amount DESC
-        ";
-        
-        $methods = $this->db->fetchAll($sql, [$dateFrom, $dateTo]);
-        
-        $totalAmount = array_sum(array_column($methods, 'total_amount'));
-        
-        foreach ($methods as &$method) {
-            $method['total_amount'] = (float)$method['total_amount'];
-            $method['percentage'] = $totalAmount > 0 ? round(($method['total_amount'] / $totalAmount) * 100, 2) : 0;
-        }
-        
-        return $this->success($methods);
-    }
-    
-    /**
-     * Get order sources breakdown
-     */
-    private function getOrderSources() {
-        $dateFrom = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
-        $dateTo = $_GET['date_to'] ?? date('Y-m-d');
-        
-        $sql = "
-            SELECT 
-                order_source,
-                COUNT(*) as order_count,
-                SUM(CASE WHEN status = 'completed' THEN total ELSE 0 END) as revenue
+        // Order Types Distribution
+        $stmt = $conn->prepare("
+            SELECT order_type, COUNT(*) as count
             FROM orders
             WHERE DATE(created_at) BETWEEN ? AND ?
-            GROUP BY order_source
-            ORDER BY order_count DESC
-        ";
+            AND status = 'completed'
+            GROUP BY order_type
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $orderTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        $sources = $this->db->fetchAll($sql, [$dateFrom, $dateTo]);
-        
-        foreach ($sources as &$source) {
-            $source['revenue'] = (float)$source['revenue'];
+        $typeLabels = [];
+        $typeValues = [];
+        foreach ($orderTypes as $type) {
+            $typeLabels[] = ucfirst(str_replace('-', ' ', $type['order_type']));
+            $typeValues[] = (int)$type['count'];
         }
         
-        return $this->success($sources);
-    }
-    
-    /**
-     * Get daily summary
-     */
-    private function getDailySummary() {
-        $date = $_GET['date'] ?? date('Y-m-d');
-        
-        // Orders summary
-        $orders = $this->db->fetchOne("
-            SELECT 
-                COUNT(*) as total_orders,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-                COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled,
-                SUM(CASE WHEN status = 'completed' THEN total ELSE 0 END) as revenue,
-                SUM(CASE WHEN status = 'completed' THEN subtotal ELSE 0 END) as subtotal,
-                SUM(CASE WHEN status = 'completed' THEN tax ELSE 0 END) as tax,
-                SUM(CASE WHEN status = 'completed' THEN service_charge ELSE 0 END) as service_charge,
-                SUM(CASE WHEN status = 'completed' THEN discount ELSE 0 END) as discount
-            FROM orders
-            WHERE DATE(created_at) = ?
-        ", [$date]);
-        
-        // Payment summary
-        $payments = $this->db->fetchOne("
-            SELECT 
-                COUNT(*) as total_transactions,
-                SUM(amount) as total_collected
-            FROM payments
-            WHERE DATE(paid_at) = ?
-            AND payment_status = 'completed'
-        ", [$date]);
-        
-        // Items sold
-        $items = $this->db->fetchOne("
-            SELECT 
-                COUNT(DISTINCT oi.id) as items_count,
-                SUM(oi.quantity) as total_quantity
-            FROM order_items oi
-            JOIN orders o ON oi.order_id = o.id
-            WHERE DATE(o.created_at) = ?
-            AND o.status = 'completed'
-        ", [$date]);
-        
-        return $this->success([
-            'date' => $date,
-            'orders' => [
-                'total' => (int)$orders['total_orders'],
-                'completed' => (int)$orders['completed'],
-                'cancelled' => (int)$orders['cancelled'],
-                'revenue' => (float)$orders['revenue'],
-                'subtotal' => (float)$orders['subtotal'],
-                'tax' => (float)$orders['tax'],
-                'service_charge' => (float)$orders['service_charge'],
-                'discount' => (float)$orders['discount']
-            ],
-            'payments' => [
-                'transactions' => (int)$payments['total_transactions'],
-                'total_collected' => (float)$payments['total_collected']
-            ],
-            'items' => [
-                'unique_items' => (int)$items['items_count'],
-                'total_quantity' => (int)$items['total_quantity']
-            ]
-        ]);
-    }
-    
-    /**
-     * Get monthly comparison
-     */
-    private function getMonthlyComparison() {
-        $months = $_GET['months'] ?? 6;
-        
-        $sql = "
-            SELECT 
-                DATE_FORMAT(created_at, '%Y-%m') as month,
-                COUNT(*) as total_orders,
-                SUM(CASE WHEN status = 'completed' THEN total ELSE 0 END) as revenue
-            FROM orders
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? MONTH)
-            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-            ORDER BY month ASC
-        ";
-        
-        $data = $this->db->fetchAll($sql, [(int)$months]);
-        
-        foreach ($data as &$row) {
-            $row['revenue'] = (float)$row['revenue'];
-        }
-        
-        return $this->success($data);
-    }
-    
-    /**
-     * Export sales data (CSV)
-     */
-    private function exportSales() {
-        $dateFrom = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
-        $dateTo = $_GET['date_to'] ?? date('Y-m-d');
-        
-        $sql = "
-            SELECT 
-                o.order_number, o.created_at, o.completed_at,
-                t.table_number, o.order_type, o.order_source,
-                o.subtotal, o.tax, o.service_charge, o.discount, o.total,
-                o.status, p.payment_method
-            FROM orders o
-            LEFT JOIN tables t ON o.table_id = t.id
-            LEFT JOIN payments p ON o.id = p.order_id
+        // Revenue by Category
+        $stmt = $conn->prepare("
+            SELECT c.name, COALESCE(SUM(oi.price * oi.quantity), 0) as revenue
+            FROM categories c
+            LEFT JOIN menu_items mi ON c.id = mi.category_id
+            LEFT JOIN order_items oi ON mi.id = oi.menu_item_id
+            LEFT JOIN orders o ON oi.order_id = o.id
             WHERE DATE(o.created_at) BETWEEN ? AND ?
-            ORDER BY o.created_at DESC
-        ";
+            AND o.status = 'completed'
+            GROUP BY c.id, c.name
+            ORDER BY revenue DESC
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        $orders = $this->db->fetchAll($sql, [$dateFrom, $dateTo]);
-        
-        // Generate CSV
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="sales-report-' . $dateFrom . '-to-' . $dateTo . '.csv"');
-        
-        $output = fopen('php://output', 'w');
-        
-        // Headers
-        fputcsv($output, [
-            'Order Number', 'Created At', 'Completed At', 'Table', 'Type', 'Source',
-            'Subtotal', 'Tax', 'Service Charge', 'Discount', 'Total', 'Status', 'Payment Method'
-        ]);
-        
-        // Data
-        foreach ($orders as $order) {
-            fputcsv($output, [
-                $order['order_number'],
-                $order['created_at'],
-                $order['completed_at'],
-                $order['table_number'],
-                $order['order_type'],
-                $order['order_source'],
-                $order['subtotal'],
-                $order['tax'],
-                $order['service_charge'],
-                $order['discount'],
-                $order['total'],
-                $order['status'],
-                $order['payment_method']
-            ]);
+        $catLabels = [];
+        $catValues = [];
+        foreach ($categories as $cat) {
+            $catLabels[] = $cat['name'];
+            $catValues[] = (float)$cat['revenue'];
         }
         
-        fclose($output);
-        exit();
+        // Peak Hours
+        $stmt = $conn->prepare("
+            SELECT HOUR(created_at) as hour, COUNT(*) as count
+            FROM orders
+            WHERE DATE(created_at) BETWEEN ? AND ?
+            AND status = 'completed'
+            GROUP BY HOUR(created_at)
+            ORDER BY hour
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $peakHours = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $hourCounts = array_fill(0, 24, 0);
+        foreach ($peakHours as $hour) {
+            $hourCounts[(int)$hour['hour']] = (int)$hour['count'];
+        }
+        
+        // Top Selling Items
+        $stmt = $conn->prepare("
+            SELECT mi.name, c.name as category, 
+                   SUM(oi.quantity) as quantity,
+                   SUM(oi.price * oi.quantity) as revenue
+            FROM order_items oi
+            JOIN menu_items mi ON oi.menu_item_id = mi.id
+            JOIN categories c ON mi.category_id = c.id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE DATE(o.created_at) BETWEEN ? AND ?
+            AND o.status = 'completed'
+            GROUP BY mi.id, mi.name, c.name
+            ORDER BY revenue DESC
+            LIMIT 10
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $topItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Payment Methods
+        $stmt = $conn->prepare("
+            SELECT payment_method as method, 
+                   COUNT(*) as count,
+                   SUM(total_amount) as amount
+            FROM orders
+            WHERE DATE(created_at) BETWEEN ? AND ?
+            AND status = 'completed'
+            AND payment_method IS NOT NULL
+            GROUP BY payment_method
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $paymentMethods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // If no payment methods, create dummy data
+        if (empty($paymentMethods)) {
+            $paymentMethods = [
+                ['method' => 'Cash', 'count' => 0, 'amount' => 0],
+                ['method' => 'Card', 'count' => 0, 'amount' => 0],
+                ['method' => 'QRIS', 'count' => 0, 'amount' => 0]
+            ];
+        }
+        
+        $response['success'] = true;
+        $response['data'] = [
+            'totalRevenue' => (float)$totalRevenue,
+            'totalOrders' => (int)$totalOrders,
+            'avgOrderValue' => (float)$avgOrderValue,
+            'totalCustomers' => (int)$totalCustomers,
+            'revenueChange' => 0,
+            'ordersChange' => 0,
+            'avgChange' => 0,
+            'salesTrend' => [
+                'labels' => $trendLabels,
+                'values' => $trendValues
+            ],
+            'orderTypes' => [
+                'labels' => empty($typeLabels) ? ['Dine In', 'Takeaway', 'Delivery'] : $typeLabels,
+                'values' => empty($typeValues) ? [0, 0, 0] : $typeValues
+            ],
+            'categories' => [
+                'labels' => $catLabels,
+                'values' => $catValues
+            ],
+            'peakHours' => [
+                'values' => array_slice($hourCounts, 6, 18) // 6AM to 11PM
+            ],
+            'topItems' => $topItems,
+            'paymentMethods' => $paymentMethods
+        ];
     }
     
-    /**
-     * Success response
-     */
-    private function success($data, $message = 'Success', $code = 200) {
-        http_response_code($code);
-        echo json_encode([
-            'success' => true,
-            'message' => $message,
-            'data' => $data
-        ]);
-        exit();
-    }
-    
-    /**
-     * Error response
-     */
-    private function error($message, $code = 400) {
-        http_response_code($code);
-        echo json_encode([
-            'success' => false,
-            'message' => $message,
-            'data' => null
-        ]);
-        exit();
-    }
+} catch (Exception $e) {
+    $response['message'] = 'Error: ' . $e->getMessage();
+    error_log("Reports API Error: " . $e->getMessage());
+    http_response_code(500);
 }
 
-$api = new ReportsAPI();
-$api->handleRequest();
+echo json_encode($response);
 ?>
