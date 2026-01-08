@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Digital by Jeff POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-purple-700 to-indigo-800 text-white shadow-2xl z-50 transform transition-transform duration-300">
+        <div class="p-6 border-b border-purple-600">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white rounded-full p-2">
+                    <i class="fas fa-utensils text-purple-700 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg">Digital by Jeff</h1>
+                    <p class="text-xs text-purple-200">Restaurant POS</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="mt-6">
+            <a href="dashboard.html" class="flex items-center px-6 py-3 bg-purple-600 border-l-4 border-white">
+                <i class="fas fa-home w-6"></i>
+                <span class="ml-3">Dashboard</span>
+            </a>
+            <a href="menu-management.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-utensils w-6"></i>
+                <span class="ml-3">Menu</span>
+            </a>
+            <a href="orders.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-shopping-cart w-6"></i>
+                <span class="ml-3">Orders</span>
+                <span id="orderBadge" class="ml-auto bg-red-500 text-xs px-2 py-1 rounded-full">0</span>
+            </a>
+            <a href="kitchen.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-fire w-6"></i>
+                <span class="ml-3">Kitchen</span>
+            </a>
+            <a href="inventory.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-boxes w-6"></i>
+                <span class="ml-3">Inventory</span>
+            </a>
+            <a href="reports.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-chart-line w-6"></i>
+                <span class="ml-3">Reports</span>
+            </a>
+            <a href="settings.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-cog w-6"></i>
+                <span class="ml-3">Settings</span>
+            </a>
+            <a href="#" onclick="logout()" class="flex items-center px-6 py-3 hover:bg-red-600 transition mt-auto">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span class="ml-3">Logout</span>
+            </a>
+        </nav>
+
+        <div class="absolute bottom-0 w-full p-6 border-t border-purple-600">
+            <div class="flex items-center space-x-3">
+                <img id="userAvatar" src="https://ui-avatars.com/api/?name=Admin" class="w-10 h-10 rounded-full">
+                <div class="flex-1 min-w-0">
+                    <p id="userName" class="text-sm font-medium truncate">Loading...</p>
+                    <p id="userRole" class="text-xs text-purple-200 truncate">Admin</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                    <p class="text-gray-600 text-sm" id="currentDate"></p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="relative p-2 text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+                    </button>
+                    <button onclick="refreshDashboard()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="p-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Today's Revenue -->
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                            <i class="fas fa-dollar-sign text-2xl"></i>
+                        </div>
+                        <div id="revenueChange" class="text-sm font-semibold">+0%</div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1" id="todayRevenue">Rp 0</div>
+                    <div class="text-purple-100 text-sm">Today's Revenue</div>
+                </div>
+
+                <!-- Total Orders -->
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                            <i class="fas fa-shopping-bag text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1" id="totalOrders">0</div>
+                    <div class="text-blue-100 text-sm">Total Orders Today</div>
+                </div>
+
+                <!-- Active Orders -->
+                <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                            <i class="fas fa-fire text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1" id="activeOrders">0</div>
+                    <div class="text-green-100 text-sm">Active Orders</div>
+                </div>
+
+                <!-- Customers Today -->
+                <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                            <i class="fas fa-users text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1" id="customersToday">0</div>
+                    <div class="text-orange-100 text-sm">Customers Today</div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Sales Chart -->
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Sales Overview (This Week)</h3>
+                    <canvas id="salesChart" height="200"></canvas>
+                </div>
+
+                <!-- Category Chart -->
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Sales by Category</h3>
+                    <canvas id="categoryChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Orders & Quick Stats -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Recent Orders -->
+                <div class="lg:col-span-2 bg-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">Recent Orders</h3>
+                        <a href="orders.html" class="text-purple-600 hover:text-purple-700 text-sm font-semibold">
+                            View All <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    <div id="recentOrdersList" class="space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Loading orders...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="space-y-6">
+                    <!-- Kitchen Queue -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Kitchen Queue</h3>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-3xl font-bold text-orange-600" id="kitchenQueue">0</div>
+                                <div class="text-gray-600 text-sm">Items in queue</div>
+                            </div>
+                            <div class="bg-orange-100 rounded-full p-4">
+                                <i class="fas fa-fire text-orange-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tables Status -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Tables</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Occupied</span>
+                                <span class="font-semibold text-red-600" id="occupiedTables">0</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Available</span>
+                                <span class="font-semibold text-green-600" id="availableTables">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock Alert -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Inventory Alert</h3>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-3xl font-bold text-red-600" id="lowStockCount">0</div>
+                                <div class="text-gray-600 text-sm">Low stock items</div>
+                            </div>
+                            <div class="bg-red-100 rounded-full p-4">
+                                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '../api';
+        let salesChart, categoryChart;
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            return token;
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Load user info
+        function loadUserInfo() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('userName').textContent = user.full_name || 'Admin';
+            document.getElementById('userRole').textContent = user.role || 'admin';
+            document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'Admin')}`;
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            const token = checkAuth();
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/reports.php?action=dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateDashboardStats(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        // Update dashboard stats
+        function updateDashboardStats(data) {
+            const today = data.today || {};
+            const current = data.current || {};
+
+            // Format currency
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(amount || 0);
+            };
+
+            // Update stats
+            document.getElementById('todayRevenue').textContent = formatCurrency(today.total_revenue);
+            document.getElementById('revenueChange').textContent = `${today.revenue_change_percent > 0 ? '+' : ''}${today.revenue_change_percent}%`;
+            document.getElementById('totalOrders').textContent = today.total_orders || 0;
+            document.getElementById('activeOrders').textContent = current.active_orders || 0;
+            document.getElementById('customersToday').textContent = current.customers_today || 0;
+            document.getElementById('kitchenQueue').textContent = current.kitchen_queue || 0;
+            document.getElementById('occupiedTables').textContent = current.occupied_tables || 0;
+            document.getElementById('lowStockCount').textContent = current.low_stock_items || 0;
+            document.getElementById('orderBadge').textContent = current.active_orders || 0;
+        }
+
+        // Load recent orders
+        async function loadRecentOrders() {
+            const token = checkAuth();
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/reports.php?action=sales-today`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    displayRecentOrders(data.data.slice(0, 5));
+                } else {
+                    document.getElementById('recentOrdersList').innerHTML = '<p class="text-center text-gray-500 py-8">No orders today</p>';
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+
+        // Display recent orders
+        function displayRecentOrders(orders) {
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(amount || 0);
+            };
+
+            const statusColors = {
+                'pending': 'yellow',
+                'confirmed': 'blue',
+                'preparing': 'orange',
+                'ready': 'green',
+                'completed': 'gray',
+                'cancelled': 'red'
+            };
+
+            const html = orders.map(order => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800">${order.order_number}</div>
+                        <div class="text-sm text-gray-600">
+                            ${order.table_number ? `Table ${order.table_number}` : order.order_type} • 
+                            ${order.items_count} items
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-gray-800">${formatCurrency(order.total)}</div>
+                        <div class="text-xs px-2 py-1 rounded-full bg-${statusColors[order.status] || 'gray'}-100 text-${statusColors[order.status] || 'gray'}-700">
+                            ${order.status}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('recentOrdersList').innerHTML = html;
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Sales Chart
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            salesChart = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: 'rgb(147, 51, 234)',
+                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Category Chart
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Refresh dashboard
+        function refreshDashboard() {
+            loadDashboard();
+            loadRecentOrders();
+        }
+
+        // Update current date
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            checkAuth();
+            loadUserInfo();
+            updateCurrentDate();
+            initCharts();
+            loadDashboard();
+            loadRecentOrders();
+
+            // Auto refresh every 30 seconds
+            setInterval(refreshDashboard, 30000);
+        });
+    </script>
+</body>
+</html>
