@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Management - Digital by Jeff POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Include Sidebar (same as dashboard) -->
+    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-purple-700 to-indigo-800 text-white shadow-2xl z-50">
+        <div class="p-6 border-b border-purple-600">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white rounded-full p-2">
+                    <i class="fas fa-utensils text-purple-700 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg">Digital by Jeff</h1>
+                    <p class="text-xs text-purple-200">Restaurant POS</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="mt-6">
+            <a href="dashboard.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-home w-6"></i><span class="ml-3">Dashboard</span>
+            </a>
+            <a href="menu-management.html" class="flex items-center px-6 py-3 bg-purple-600 border-l-4 border-white">
+                <i class="fas fa-utensils w-6"></i><span class="ml-3">Menu</span>
+            </a>
+            <a href="orders.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-shopping-cart w-6"></i><span class="ml-3">Orders</span>
+            </a>
+            <a href="kitchen.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-fire w-6"></i><span class="ml-3">Kitchen</span>
+            </a>
+            <a href="inventory.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-boxes w-6"></i><span class="ml-3">Inventory</span>
+            </a>
+            <a href="reports.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-chart-line w-6"></i><span class="ml-3">Reports</span>
+            </a>
+            <a href="settings.html" class="flex items-center px-6 py-3 hover:bg-purple-600 transition">
+                <i class="fas fa-cog w-6"></i><span class="ml-3">Settings</span>
+            </a>
+            <a href="#" onclick="logout()" class="flex items-center px-6 py-3 hover:bg-red-600 transition">
+                <i class="fas fa-sign-out-alt w-6"></i><span class="ml-3">Logout</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Menu Management</h2>
+                    <p class="text-gray-600 text-sm">Manage your restaurant menu items</p>
+                </div>
+                <button onclick="openAddMenuModal()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                    <i class="fas fa-plus mr-2"></i>Add New Item
+                </button>
+            </div>
+        </header>
+
+        <div class="p-8">
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="filterCategory" onchange="loadMenuItems()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                        <select id="filterAvailable" onchange="loadMenuItems()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="">All</option>
+                            <option value="1">Available</option>
+                            <option value="0">Unavailable</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Featured</label>
+                        <select id="filterFeatured" onchange="loadMenuItems()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="">All</option>
+                            <option value="1">Featured Only</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <input type="text" id="searchInput" placeholder="Search menu..." onkeyup="searchMenu()" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu Grid -->
+            <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Loading State -->
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-500">Loading menu items...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Menu Modal -->
+    <div id="menuModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Add Menu Item</h3>
+            </div>
+            
+            <form id="menuForm" class="p-6 space-y-4">
+                <input type="hidden" id="itemId">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
+                        <input type="text" id="itemName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                        <select id="itemCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="">Select Category</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (Rp) *</label>
+                        <input type="number" id="itemPrice" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="itemDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Preparation Time (min)</label>
+                        <input type="number" id="itemPrepTime" value="15" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Spicy Level</label>
+                        <select id="itemSpicy" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="none">None</option>
+                            <option value="mild">Mild</option>
+                            <option value="medium">Medium</option>
+                            <option value="hot">Hot</option>
+                            <option value="very_hot">Very Hot</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
+                        <input type="file" id="itemImage" accept="image/*" onchange="previewImage(event)" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <img id="imagePreview" class="hidden mt-2 w-32 h-32 object-cover rounded-lg">
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="itemAvailable" checked class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                        <label for="itemAvailable" class="ml-2 text-sm text-gray-700">Available</label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="itemFeatured" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                        <label for="itemFeatured" class="ml-2 text-sm text-gray-700">Featured</label>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeMenuModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                        <i class="fas fa-save mr-2"></i>Save Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '../api';
+        let menuItems = [];
+        let categories = [];
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            return token;
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // Load categories
+        async function loadCategories() {
+            const token = checkAuth();
+            try {
+                const response = await fetch(`${API_BASE}/menu.php?action=categories`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    categories = data.data;
+                    populateCategoryDropdowns();
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        function populateCategoryDropdowns() {
+            const options = categories.map(cat => 
+                `<option value="${cat.id}">${cat.name}</option>`
+            ).join('');
+            
+            document.getElementById('filterCategory').innerHTML += options;
+            document.getElementById('itemCategory').innerHTML += options;
+        }
+
+        // Load menu items
+        async function loadMenuItems() {
+            const token = checkAuth();
+            const category = document.getElementById('filterCategory').value;
+            const available = document.getElementById('filterAvailable').value;
+            const featured = document.getElementById('filterFeatured').value;
+            
+            let url = `${API_BASE}/menu.php?action=list`;
+            if (category) url += `&category_id=${category}`;
+            if (available) url += `&available=${available}`;
+            if (featured) url += `&featured=${featured}`;
+            
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    menuItems = data.data;
+                    displayMenuItems(menuItems);
+                }
+            } catch (error) {
+                console.error('Error loading menu:', error);
+            }
+        }
+
+        function displayMenuItems(items) {
+            const grid = document.getElementById('menuGrid');
+            
+            if (items.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500">No menu items found</div>';
+                return;
+            }
+            
+            const formatPrice = (price) => {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(price);
+            };
+            
+            const html = items.map(item => `
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition ${!item.is_available ? 'opacity-60' : ''}">
+                    <div class="relative h-48 bg-gray-200">
+                        ${item.image ? 
+                            `<img src="../uploads/${item.image}" class="w-full h-full object-cover">` :
+                            `<div class="w-full h-full flex items-center justify-center"><i class="fas fa-utensils text-4xl text-gray-400"></i></div>`
+                        }
+                        ${item.is_featured ? '<div class="absolute top-2 right-2 bg-yellow-400 text-white px-2 py-1 rounded text-xs font-bold"><i class="fas fa-star mr-1"></i>Featured</div>' : ''}
+                        ${!item.is_available ? '<div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">Unavailable</div>' : ''}
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <h3 class="font-bold text-gray-800 text-lg">${item.name}</h3>
+                            <button onclick="toggleAvailability(${item.id})" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-toggle-${item.is_available ? 'on' : 'off'}"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2 line-clamp-2">${item.description || 'No description'}</p>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-purple-600 font-bold text-lg">${formatPrice(item.price)}</span>
+                            <span class="text-xs px-2 py-1 bg-gray-100 rounded">${item.category_name}</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editMenuItem(${item.id})" class="flex-1 bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button onclick="deleteMenuItem(${item.id})" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            grid.innerHTML = html;
+        }
+
+        function searchMenu() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = menuItems.filter(item => 
+                item.name.toLowerCase().includes(query) || 
+                (item.description && item.description.toLowerCase().includes(query))
+            );
+            displayMenuItems(filtered);
+        }
+
+        function openAddMenuModal() {
+            document.getElementById('modalTitle').textContent = 'Add Menu Item';
+            document.getElementById('menuForm').reset();
+            document.getElementById('itemId').value = '';
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('menuModal').classList.remove('hidden');
+        }
+
+        function closeMenuModal() {
+            document.getElementById('menuModal').classList.add('hidden');
+        }
+
+        async function editMenuItem(id) {
+            const token = checkAuth();
+            try {
+                const response = await fetch(`${API_BASE}/menu.php?action=get&id=${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const item = data.data;
+                    document.getElementById('modalTitle').textContent = 'Edit Menu Item';
+                    document.getElementById('itemId').value = item.id;
+                    document.getElementById('itemName').value = item.name;
+                    document.getElementById('itemCategory').value = item.category_id;
+                    document.getElementById('itemPrice').value = item.price;
+                    document.getElementById('itemDescription').value = item.description || '';
+                    document.getElementById('itemPrepTime').value = item.preparation_time;
+                    document.getElementById('itemSpicy').value = item.spicy_level;
+                    document.getElementById('itemAvailable').checked = item.is_available == 1;
+                    document.getElementById('itemFeatured').checked = item.is_featured == 1;
+                    
+                    if (item.image) {
+                        document.getElementById('imagePreview').src = `../uploads/${item.image}`;
+                        document.getElementById('imagePreview').classList.remove('hidden');
+                    }
+                    
+                    document.getElementById('menuModal').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading item:', error);
+            }
+        }
+
+        async function deleteMenuItem(id) {
+            if (!confirm('Are you sure you want to delete this menu item?')) return;
+            
+            const token = checkAuth();
+            try {
+                const response = await fetch(`${API_BASE}/menu.php?action=delete&id=${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Menu item deleted successfully');
+                    loadMenuItems();
+                }
+            } catch (error) {
+                console.error('Error deleting item:', error);
+            }
+        }
+
+        async function toggleAvailability(id) {
+            const token = checkAuth();
+            try {
+                const response = await fetch(`${API_BASE}/menu.php?action=toggle-availability&id=${id}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    loadMenuItems();
+                }
+            } catch (error) {
+                console.error('Error toggling availability:', error);
+            }
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.getElementById('menuForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const token = checkAuth();
+            const itemId = document.getElementById('itemId').value;
+            const isEdit = itemId !== '';
+            
+            const formData = {
+                name: document.getElementById('itemName').value,
+                category_id: document.getElementById('itemCategory').value,
+                price: parseFloat(document.getElementById('itemPrice').value),
+                description: document.getElementById('itemDescription').value,
+                preparation_time: parseInt(document.getElementById('itemPrepTime').value),
+                spicy_level: document.getElementById('itemSpicy').value,
+                is_available: document.getElementById('itemAvailable').checked ? 1 : 0,
+                is_featured: document.getElementById('itemFeatured').checked ? 1 : 0
+            };
+            
+            // Handle image
+            const imageFile = document.getElementById('itemImage').files[0];
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    formData.image_base64 = e.target.result;
+                    await saveMenuItem(formData, isEdit, itemId, token);
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                await saveMenuItem(formData, isEdit, itemId, token);
+            }
+        });
+
+        async function saveMenuItem(formData, isEdit, itemId, token) {
+            try {
+                const url = isEdit ? 
+                    `${API_BASE}/menu.php?action=update&id=${itemId}` :
+                    `${API_BASE}/menu.php?action=create`;
+                
+                const response = await fetch(url, {
+                    method: isEdit ? 'PUT' : 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(isEdit ? 'Menu item updated!' : 'Menu item created!');
+                    closeMenuModal();
+                    loadMenuItems();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error saving item:', error);
+                alert('Error saving menu item');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            checkAuth();
+            loadCategories();
+            loadMenuItems();
+        });
+    </script>
+</body>
+</html>
