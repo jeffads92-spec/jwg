@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - Digital by Jeff</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box;}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 {font-size: 24px;}
+        .cart-btn {
+            background: rgba(255,255,255,0.2); border: 2px solid white;
+            color: white; padding: 10px 20px; border-radius: 50px;
+            cursor: pointer; font-weight: 600; position: relative;
+            transition: all 0.3s;
+        }
+        .cart-btn:hover {background: rgba(255,255,255,0.3);}
+        .cart-count {
+            position: absolute; top: -8px; right: -8px;
+            background: #ef4444; color: white; width: 24px; height: 24px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold;
+        }
+        .container {max-width: 1200px; margin: 0 auto; padding: 20px;}
+        .categories {
+            display: flex; gap: 10px; margin-bottom: 30px; overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .category-btn {
+            padding: 12px 24px; background: white; border: 2px solid #e2e8f0;
+            border-radius: 50px; cursor: pointer; font-weight: 600;
+            white-space: nowrap; transition: all 0.3s;
+        }
+        .category-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-color: #667eea;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .menu-item {
+            background: white; border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden; transition: all 0.3s;
+        }
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        .item-image {
+            width: 100%; height: 200px; object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .item-content {padding: 20px;}
+        .item-name {
+            font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 8px;
+        }
+        .item-desc {
+            font-size: 14px; color: #718096; margin-bottom: 15px;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .item-footer {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .item-price {
+            font-size: 20px; font-weight: bold; color: #667eea;
+        }
+        .add-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 10px 20px;
+            border-radius: 50px; cursor: pointer; font-weight: 600;
+            transition: all 0.3s;
+        }
+        .add-btn:hover {transform: scale(1.05);}
+        .unavailable {opacity: 0.6; position: relative;}
+        .unavailable::after {
+            content: 'Not Available'; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: rgba(239,68,68,0.9);
+            color: white; padding: 8px 16px; border-radius: 20px;
+            font-weight: bold; font-size: 14px;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            width: 100%; padding: 15px 20px; border: 2px solid #e2e8f0;
+            border-radius: 50px; font-size: 16px;
+        }
+        .search-box input:focus {
+            outline: none; border-color: #667eea;
+        }
+        .cart-floating {
+            position: fixed; bottom: 20px; right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 15px 30px; border-radius: 50px;
+            box-shadow: 0 8px 20px rgba(102,126,234,0.4);
+            cursor: pointer; font-weight: 600; z-index: 99;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal.active {display: flex;}
+        .modal-content {
+            background: white; border-radius: 20px; padding: 30px;
+            max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0;
+        }
+        .close-btn {
+            background: none; border: none; font-size: 28px;
+            cursor: pointer; color: #718096;
+        }
+        .quantity-control {
+            display: flex; align-items: center; gap: 15px;
+            background: #f7fafc; padding: 10px 15px; border-radius: 10px;
+            margin: 15px 0;
+        }
+        .quantity-control button {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: none; background: #667eea; color: white;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+        }
+        .quantity-control span {font-size: 20px; font-weight: bold; min-width: 40px; text-align: center;}
+        .form-group {margin-bottom: 15px;}
+        .form-group label {
+            display: block; margin-bottom: 5px; font-weight: 600; color: #4a5568;
+        }
+        .form-group textarea {
+            width: 100%; padding: 12px; border: 2px solid #e2e8f0;
+            border-radius: 10px; resize: vertical; min-height: 80px;
+        }
+        .btn-primary {
+            width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 16px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1><i class="fas fa-utensils"></i> Our Menu</h1>
+            <button class="cart-btn" onclick="viewCart()">
+                <i class="fas fa-shopping-cart"></i> Cart
+                <span class="cart-count" id="cartCount">0</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search menu...">
+        </div>
+
+        <div class="categories" id="categories">
+            <button class="category-btn active" data-category="all">All</button>
+        </div>
+
+        <div class="menu-grid" id="menuGrid"></div>
+    </div>
+
+    <div class="cart-floating" onclick="viewCart()" id="cartFloating" style="display:none;">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cartTotal">Rp 0</span>
+    </div>
+
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalItemName">Item</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <img id="modalItemImage" style="width:100%; border-radius:10px; margin-bottom:15px;">
+            <p id="modalItemDesc" style="color:#718096; margin-bottom:15px;"></p>
+            <div style="font-size:24px; font-weight:bold; color:#667eea; margin-bottom:15px;" id="modalItemPrice"></div>
+            
+            <div class="quantity-control">
+                <button onclick="changeQuantity(-1)">-</button>
+                <span id="modalQuantity">1</span>
+                <button onclick="changeQuantity(1)">+</button>
+            </div>
+
+            <div class="form-group">
+                <label>Special Notes</label>
+                <textarea id="itemNotes" placeholder="Add special requests..."></textarea>
+            </div>
+
+            <button class="btn-primary" onclick="addToCart()">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '../api/customer';
+        let menuItems = [];
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        let currentItem = null;
+        let currentQuantity = 1;
+        const tableNumber = new URLSearchParams(window.location.search).get('table') || '';
+
+        async function loadMenu() {
+            try {
+                const response = await fetch(`${API_URL}/menu.php?action=list`);
+                const data = await response.json();
+                if (data.success) {
+                    menuItems = data.data;
+                    renderCategories();
+                    renderMenu();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderCategories() {
+            const categories = [...new Set(menuItems.map(i => i.category))];
+            const container = document.getElementById('categories');
+            container.innerHTML = `
+                <button class="category-btn active" data-category="all">All</button>
+                ${categories.map(c => `
+                    <button class="category-btn" data-category="${c}">${c}</button>
+                `).join('')}
+            `;
+
+            container.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    container.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    filterMenu(btn.dataset.category);
+                });
+            });
+        }
+
+        function renderMenu(items = menuItems) {
+            const grid = document.getElementById('menuGrid');
+            grid.innerHTML = items.map(item => `
+                <div class="menu-item ${!item.is_available ? 'unavailable' : ''}">
+                    <img src="${item.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                         class="item-image" alt="${item.name}">
+                    <div class="item-content">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-desc">${item.description}</div>
+                        <div class="item-footer">
+                            <div class="item-price">Rp ${formatNumber(item.price)}</div>
+                            ${item.is_available ? `
+                                <button class="add-btn" onclick='openItemModal(${JSON.stringify(item)})'>
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterMenu(category) {
+            const filtered = category === 'all' ? menuItems : menuItems.filter(i => i.category === category);
+            renderMenu(filtered);
+        }
+
+        function openItemModal(item) {
+            currentItem = item;
+            currentQuantity = 1;
+            document.getElementById('modalItemName').textContent = item.name;
+            document.getElementById('modalItemImage').src = item.image || 'https://via.placeholder.com/600x400?text=No+Image';
+            document.getElementById('modalItemDesc').textContent = item.description;
+            document.getElementById('modalItemPrice').textContent = 'Rp ' + formatNumber(item.price);
+            document.getElementById('modalQuantity').textContent = currentQuantity;
+            document.getElementById('itemNotes').value = '';
+            document.getElementById('itemModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('itemModal').classList.remove('active');
+        }
+
+        function changeQuantity(change) {
+            currentQuantity = Math.max(1, currentQuantity + change);
+            document.getElementById('modalQuantity').textContent = currentQuantity;
+        }
+
+        function addToCart() {
+            const cartItem = {
+                id: currentItem.id,
+                name: currentItem.name,
+                price: currentItem.price,
+                quantity: currentQuantity,
+                notes: document.getElementById('itemNotes').value,
+                image: currentItem.image
+            };
+
+            const existing = cart.findIndex(i => i.id === cartItem.id && i.notes === cartItem.notes);
+            if (existing >= 0) {
+                cart[existing].quantity += cartItem.quantity;
+            } else {
+                cart.push(cartItem);
+            }
+
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartUI();
+            closeModal();
+            alert('Added to cart!');
+        }
+
+        function updateCartUI() {
+            const count = cart.reduce((sum, i) => sum + i.quantity, 0);
+            const total = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            
+            document.getElementById('cartCount').textContent = count;
+            document.getElementById('cartTotal').textContent = 'Rp ' + formatNumber(total);
+            document.getElementById('cartFloating').style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        function viewCart() {
+            window.location.href = `cart.html${tableNumber ? '?table=' + tableNumber : ''}`;
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('id-ID').format(num);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            const filtered = menuItems.filter(i => 
+                i.name.toLowerCase().includes(search) || 
+                i.description.toLowerCase().includes(search)
+            );
+            renderMenu(filtered);
+        });
+
+        loadMenu();
+        updateCartUI();
+    </script>
+</body>
+</html>
